@@ -113,10 +113,6 @@ body {
     color: var(--primary-teal-dark);
 }
 
-.btn-diag-nav {
-    border: 1px solid var(--border-color);
-}
-
 /* --- DEMO BANNER --- */
 .demo-banner {
     background-color: #fffbeb;
@@ -141,7 +137,7 @@ body {
     padding: 0 0.25rem;
 }
 
-/* --- MODAL DE DIAGNÓSTICO --- */
+/* --- MODAL DE DIAGNÓSTICO Y DESARROLLADOR --- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -250,6 +246,69 @@ body {
     padding: 1rem 1.25rem;
     border-top: 1px solid var(--border-color);
     background-color: var(--bg-main);
+}
+
+/* MENÚ DE DESARROLLADOR */
+.dev-menu-intro {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.dev-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.dev-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-align: left;
+    transition: var(--transition);
+}
+
+.dev-action-btn:hover {
+    border-color: var(--primary-teal);
+    background-color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.dev-btn-icon {
+    font-size: 1.5rem;
+}
+
+.dev-btn-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.dev-btn-text strong {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.dev-btn-text span {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.dev-future-box {
+    background-color: var(--primary-teal-light);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: var(--primary-teal-dark);
+    text-align: center;
 }
 
 /* --- CONTENIDO PRINCIPAL Y SECCIONES SPA --- */
@@ -853,7 +912,7 @@ input:focus, select:focus {
     to { transform: rotate(360deg); }
 }
 
-/* --- FOOTER --- */
+/* --- FOOTER INTERACTIVO --- */
 .app-footer {
     text-align: center;
     padding: 1.5rem 1rem;
@@ -861,4 +920,16 @@ input:focus, select:focus {
     color: var(--text-muted);
     border-top: 1px solid var(--border-color);
     margin-top: auto;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition);
+}
+
+.app-footer:hover {
+    color: var(--primary-teal-dark);
+    background-color: rgba(13, 148, 136, 0.03);
+}
+
+.app-footer:active {
+    transform: scale(0.99);
 }

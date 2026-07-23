@@ -3,7 +3,7 @@
  * 
  * Controlador principal que maneja las vistas, estado de la interfaz,
  * navegación, filtros, gráficos de estadísticas, eventos de usuario y
- * herramientas de diagnóstico de Supabase.
+ * el Menú Secreto de Desarrollador (activado con 7 toques en el footer).
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -19,7 +19,9 @@ const App = {
         books: [],
         progressHistory: [],
         timeFilter: "all",
-        chartInstance: null
+        chartInstance: null,
+        footerClicks: 0,
+        footerTimer: null
     },
 
     // --- INICIALIZACIÓN ---
@@ -27,6 +29,7 @@ const App = {
         this.checkSupabaseConfig();
         this.setupNavigation();
         this.setupEventListeners();
+        this.setupDeveloperSecretTrigger();
         this.setInitialDates();
         this.loadBooksDropdown();
     },
@@ -61,11 +64,63 @@ const App = {
             });
         });
 
-        // Modal de Diagnóstico
-        document.getElementById("btn-open-diag")?.addEventListener("click", () => this.runDiagnostic());
+        // Modales de Diagnóstico y Desarrollador
         document.getElementById("btn-banner-diag")?.addEventListener("click", () => this.runDiagnostic());
         document.getElementById("btn-retry-diag")?.addEventListener("click", () => this.runDiagnostic());
         document.getElementById("btn-close-modal")?.addEventListener("click", () => this.closeDiagnosticModal());
+        
+        // Controles del Menú de Desarrollador
+        document.getElementById("btn-close-dev-modal")?.addEventListener("click", () => this.closeDevModal());
+        document.getElementById("btn-dev-run-diag")?.addEventListener("click", () => {
+            this.closeDevModal();
+            this.runDiagnostic();
+        });
+        document.getElementById("btn-dev-clear-cache")?.addEventListener("click", () => {
+            localStorage.clear();
+            this.showToast("🧹 Caché local del navegador limpiada.", "success");
+        });
+        document.getElementById("btn-dev-log-data")?.addEventListener("click", () => {
+            console.log("📋 ESTADO ACTUAL DE LA APP:", this.state);
+            this.showToast("📋 Estado del sistema impreso en Consola F12.", "success");
+        });
+    },
+
+    // --- TRIGGER SECRETO: 7 TOQUES EN EL FOOTER ---
+    setupDeveloperSecretTrigger() {
+        const footerBtn = document.getElementById("app-footer-btn");
+        if (!footerBtn) return;
+
+        footerBtn.addEventListener("click", () => {
+            this.state.footerClicks++;
+
+            // Reiniciar contador si pasan 3.5 segundos sin pulsar
+            clearTimeout(this.state.footerTimer);
+            this.state.footerTimer = setTimeout(() => {
+                this.state.footerClicks = 0;
+            }, 3500);
+
+            // Mostrar cuenta regresiva sutil en los últimos toques
+            if (this.state.footerClicks >= 4 && this.state.footerClicks < 7) {
+                const remaining = 7 - this.state.footerClicks;
+                this.showToast(`Estás a ${remaining} toque${remaining > 1 ? 's' : ''} de ser desarrollador... 🛠️`, "info");
+            }
+
+            // Al llegar a 7 toques -> Desbloquear Menú de Desarrollador
+            if (this.state.footerClicks >= 7) {
+                this.state.footerClicks = 0;
+                clearTimeout(this.state.footerTimer);
+                this.showToast("🛠️ ¡Modo Desarrollador Activado!", "success");
+                this.openDevModal();
+            }
+        });
+    },
+
+    openDevModal() {
+        document.getElementById("dev-menu-modal")?.classList.remove("hidden");
+    },
+
+    closeDevModal() {
+        document.getElementById("dev-menu-modal")?.classList.add("hidden");
     },
 
     showView(viewId) {
@@ -753,7 +808,7 @@ const App = {
         setTimeout(() => {
             toast.style.opacity = "0";
             setTimeout(() => toast.remove(), 300);
-        }, 4500);
+        }, 4000);
     },
 
     escapeHtml(str) {

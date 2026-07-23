@@ -35,7 +35,6 @@
             <nav class="header-nav">
                 <button id="nav-home-btn" class="nav-link active" title="Inicio">🏠 Inicio</button>
                 <button id="nav-completed-btn" class="nav-link" title="Finalizados">✓ Finalizados</button>
-                <button id="btn-open-diag" class="nav-link btn-diag-nav" title="Diagnosticar Conexión">🔍 Diagnosticar BD</button>
             </nav>
         </div>
     </header>
@@ -68,6 +67,52 @@
             </div>
             <div class="modal-footer">
                 <button id="btn-retry-diag" class="btn-primary">🔄 Reintentar Diagnóstico</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal del Menú de Desarrollador (Acceso Secreto con 7 Toques en el Footer) -->
+    <div id="dev-menu-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>🛠️ Menú de Desarrollador</h3>
+                <button id="btn-close-dev-modal" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="dev-menu-intro">Herramientas técnicas y de diagnóstico del sistema:</p>
+                
+                <div class="dev-actions-list">
+                    <!-- Opción 1: Diagnóstico BD -->
+                    <button id="btn-dev-run-diag" class="dev-action-btn">
+                        <span class="dev-btn-icon">🔍</span>
+                        <div class="dev-btn-text">
+                            <strong>Diagnosticar Base de Datos</strong>
+                            <span>Verificar conexión, tablas y permisos RLS en Supabase</span>
+                        </div>
+                    </button>
+
+                    <!-- Opción 2: Limpiar Caché -->
+                    <button id="btn-dev-clear-cache" class="dev-action-btn">
+                        <span class="dev-btn-icon">🧹</span>
+                        <div class="dev-btn-text">
+                            <strong>Limpiar Almacenamiento Local</strong>
+                            <span>Borrar datos temporales en el navegador (LocalStorage)</span>
+                        </div>
+                    </button>
+
+                    <!-- Opción 3: Imprimir Estado -->
+                    <button id="btn-dev-log-data" class="dev-action-btn">
+                        <span class="dev-btn-icon">📋</span>
+                        <div class="dev-btn-text">
+                            <strong>Inspeccionar Estado en Consola</strong>
+                            <span>Imprimir variables y listas de datos en DevTools (F12)</span>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="dev-future-box">
+                    <p>✨ <em>Espacio reservado para futuras funciones (Sistema de Recompensas, Logros y Configuración).</em></p>
+                </div>
             </div>
         </div>
     </div>
@@ -375,9 +420,9 @@
 
     </main>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-        <p>Registro Personal de Estudio Bíblico • Hecho con ❤️ para Laurita</p>
+    <!-- Footer Interactivo (Acceso Secreto al Menú de Desarrollador al pulsar 7 veces) -->
+    <footer class="app-footer" id="app-footer-btn" role="button" tabindex="0" title="Registro Laurita">
+        <p id="footer-text">Registro Personal de Estudio Bíblico • Hecho con ❤️ para Laurita</p>
     </footer>
 
     <!-- Scripts de la Aplicación (Cargados en orden) -->
