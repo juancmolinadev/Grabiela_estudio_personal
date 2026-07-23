@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudio Bíblico Personal — Laurita</title>
+    <meta name="description" content="Registro y control de estudio bíblico personal para Laurita. Aprovecha el tiempo libre y visualiza el progreso espiritual.">
+    
+    <!-- Fuente Google: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos CSS del proyecto -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Supabase JS Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js para visualización de progreso -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Banner Global de Notificaciones Toast -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Navegación Superior Estática -->
+    <header class="app-header">
+        <div class="header-container">
+            <button id="nav-brand-btn" class="brand-button" aria-label="Ir al Inicio">
+                <span class="brand-icon">✨</span>
+                <span class="brand-title">Estudio Laurita</span>
+            </button>
+            <nav class="header-nav">
+                <button id="nav-home-btn" class="nav-link active" title="Inicio">🏠 Inicio</button>
+                <button id="nav-completed-btn" class="nav-link" title="Finalizados">✓ Finalizados</button>
+                <button id="btn-open-diag" class="nav-link btn-diag-nav" title="Diagnosticar Conexión">🔍 Diagnosticar BD</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Banner de Advertencia si Supabase no está configurado -->
+    <div id="supabase-demo-banner" class="demo-banner hidden">
+        <p>💡 <strong>Modo Demostración Activo:</strong> La app se está ejecutando localmente. Para guardar los datos en Supabase de forma permanente, configura <code>js/config.js</code> con tus credenciales. <button id="btn-banner-diag" class="btn-text-link">Probador de Conexión</button></p>
+    </div>
+
+    <!-- Modal de Diagnóstico de Supabase -->
+    <div id="diagnostic-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>🔍 Diagnóstico de Conexión a Supabase</h3>
+                <button id="btn-close-modal" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="diag-status-box" class="diag-status">
+                    <div class="spinner"></div>
+                    <p>Comprobando conexión con Supabase...</p>
+                </div>
+                <div id="diag-details-box" class="diag-details hidden">
+                    <h4 id="diag-title"></h4>
+                    <p id="diag-solution" class="diag-solution-text"></p>
+                    <details class="raw-error-details">
+                        <summary>Ver detalle técnico del error</summary>
+                        <pre id="diag-raw-error"></pre>
+                    </details>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-retry-diag" class="btn-primary">🔄 Reintentar Diagnóstico</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+
+        <!-- =================================================================== -->
+        <!-- PANTALLA PRINCIPAL (DASHBOARD) -->
+        <!-- =================================================================== -->
+        <section id="sec-home" class="view-section active">
+            <div class="hero-card">
+                <h1 class="welcome-title">Bienvenida Laurita</h1>
+                <p class="welcome-subtitle">¿Qué deseas hacer hoy?</p>
+            </div>
+
+            <div class="action-grid">
+                <!-- Botón 1: Tiempo Libre -->
+                <button id="btn-goto-time" class="action-card card-teal">
+                    <div class="card-icon">⏱️</div>
+                    <div class="card-content">
+                        <h2>Quiero aprovechar mi tiempo libre</h2>
+                        <p>Encuentra lecturas breves ideales para tus descansos o viajes.</p>
+                    </div>
+                </button>
+
+                <!-- Botón 2: Ver Progreso -->
+                <button id="btn-goto-stats" class="action-card card-purple">
+                    <div class="card-icon">📊</div>
+                    <div class="card-content">
+                        <h2>Quiero ver mi progreso espiritual</h2>
+                        <p>Revisa tus horas acumuladas, racha de días y estadísticas.</p>
+                    </div>
+                </button>
+
+                <!-- Botón 3: Registrar Progreso -->
+                <button id="btn-goto-log" class="action-card card-blue">
+                    <div class="card-icon">✏️</div>
+                    <div class="card-content">
+                        <h2>Quiero registrar mi progreso espiritual</h2>
+                        <p>Añade horas o minutos invertidos en predicación o reuniones.</p>
+                    </div>
+                </button>
+
+                <!-- Botón 4: Agregar Opciones -->
+                <button id="btn-goto-add" class="action-card card-amber">
+                    <div class="card-icon">➕</div>
+                    <div class="card-content">
+                        <h2>Quiero agregar opciones de estudio</h2>
+                        <p>Añade nuevas Atalayas, versículos, textos o libros.</p>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECCIÓN 1: APROVECHAR TIEMPO LIBRE -->
+        <!-- =================================================================== -->
+        <section id="sec-time" class="view-section">
+            <div class="section-header">
+                <button class="btn-back" data-target="sec-home">← Volver</button>
+                <h2>⏱️ Aprovechar mi tiempo libre</h2>
+            </div>
+
+            <!-- Filtros por Tiempo -->
+            <div class="filter-wrapper">
+                <span class="filter-label">Filtrar por tiempo:</span>
+                <div class="chip-group" id="time-filter-group">
+                    <button class="chip active" data-time="all">Todos</button>
+                    <button class="chip" data-time="<=10">5 a 10 min</button>
+                    <button class="chip" data-time="10-20">10 a 20 min</button>
+                    <button class="chip" data-time=">30">Más de 30 min</button>
+                </div>
+            </div>
+
+            <!-- Filtros por Actividades Cotidianas -->
+            <div class="filter-wrapper">
+                <span class="filter-label">¿Qué estás haciendo?</span>
+                <div class="chip-group" id="activity-filter-group">
+                    <button class="chip chip-activity" data-activity-time="<=10">☕ Descanso corto (5 min)</button>
+                    <button class="chip chip-activity" data-activity-time="10-20">🚌 En el bus (20 min)</button>
+                    <button class="chip chip-activity" data-activity-time="10-20">💼 Desocupada en el trabajo (20 min)</button>
+                    <button class="chip chip-activity" data-activity-time=">30">🥗 Almorzando (30 min)</button>
+                    <button class="chip chip-activity" data-activity-time=">30">🛋️ Descansando en casa (30 min)</button>
+                    <button class="chip chip-activity" data-activity-time=">30">✈️ Viajando (30+ min)</button>
+                </div>
+            </div>
+
+            <!-- Lista de Resultados Agrupados -->
+            <div id="pending-items-container" class="items-container">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Cargando opciones de estudio...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECCIÓN 2: PROGRESO ESPIRITUAL (ESTADÍSTICAS) -->
+        <!-- =================================================================== -->
+        <section id="sec-stats" class="view-section">
+            <div class="section-header">
+                <button class="btn-back" data-target="sec-home">← Volver</button>
+                <h2>📊 Mi progreso espiritual</h2>
+            </div>
+
+            <!-- Resumen de Métricas Clave -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-icon">⏳</span>
+                    <div class="metric-data">
+                        <span id="metric-total-hours" class="metric-value">0.0</span>
+                        <span class="metric-label">Horas Totales</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-icon">🔥</span>
+                    <div class="metric-data">
+                        <span id="metric-streak-days" class="metric-value">0</span>
+                        <span class="metric-label">Días de Racha</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-icon">📅</span>
+                    <div class="metric-data">
+                        <span id="metric-month-hours" class="metric-value">0.0</span>
+                        <span class="metric-label">Horas este Mes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenedor del Gráfico -->
+            <div class="chart-card">
+                <h3>Horas invertidas por Tipo de Actividad</h3>
+                <div class="chart-wrapper">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabla / Lista de Historial -->
+            <div class="history-card">
+                <h3>Registro de Actividades Recientes</h3>
+                <div id="history-container" class="history-list">
+                    <p class="empty-state">No hay registros de progreso aún.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECCIÓN 3: REGISTRAR PROGRESO ESPIRITUAL -->
+        <!-- =================================================================== -->
+        <section id="sec-log" class="view-section">
+            <div class="section-header">
+                <button class="btn-back" data-target="sec-home">← Volver</button>
+                <h2>✏️ Registrar progreso espiritual</h2>
+            </div>
+
+            <div class="form-card">
+                <form id="form-log-progress" class="styled-form">
+                    <div class="form-group">
+                        <label for="log-activity-type">¿Qué hiciste hoy?</label>
+                        <select id="log-activity-type" required>
+                            <option value="" disabled selected>Selecciona una actividad</option>
+                            <option value="predicar">Predicar</option>
+                            <option value="estudiar_reuniones">Estudiar las reuniones</option>
+                            <option value="estudio_personal">Estudio personal</option>
+                            <option value="estudio_grupo">Estudio en grupo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="log-minutes">Tiempo invertido (Minutos)</label>
+                            <input type="number" id="log-minutes" min="1" max="1440" placeholder="Ej: 45, 60, 120" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="log-date">Fecha</label>
+                            <input type="date" id="log-date" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">💾 Guardar Registro</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECCIÓN 4: AGREGAR OPCIONES DE ESTUDIO -->
+        <!-- =================================================================== -->
+        <section id="sec-add" class="view-section">
+            <div class="section-header">
+                <button class="btn-back" data-target="sec-home">← Volver</button>
+                <h2>➕ Agregar opciones de estudio</h2>
+            </div>
+
+            <!-- Pestañas de Categorías -->
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="tab-single">Atalayas / Textos / Versículos</button>
+                <button class="tab-btn" data-tab="tab-book">Libros y Capítulos</button>
+            </div>
+
+            <!-- TAB 1: Ítems Simples (Atalaya, Texto corto, Versículo) -->
+            <div id="tab-single" class="tab-content active">
+                <div class="form-card">
+                    <form id="form-add-item" class="styled-form">
+                        <div class="form-group">
+                            <label for="add-category">Categoría</label>
+                            <select id="add-category" required>
+                                <option value="atalaya">Atalaya</option>
+                                <option value="texto_corto">Texto corto</option>
+                                <option value="versiculo">Versículo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="add-title">Título o Descripción</label>
+                            <input type="text" id="add-title" placeholder="Ej: La Atalaya de Estudio - Art. 12" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="add-link">Enlace URL (opcional)</label>
+                            <input type="url" id="add-link" placeholder="https://wol.jw.org/...">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="add-time">Tiempo estimado</label>
+                            <select id="add-time" required>
+                                <option value="<=10"><= 10 min (Rápido)</option>
+                                <option value="10-20">10 - 20 min (Medio)</option>
+                                <option value=">30">> 30 min (Extenso)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-primary">➕ Crear Opción de Estudio</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB 2: Libros y Capítulos -->
+            <div id="tab-book" class="tab-content">
+                <!-- Sub-formulario A: Crear Libro -->
+                <div class="form-card margin-bottom">
+                    <h3 class="form-subtitle">1. Crear Nuevo Libro</h3>
+                    <form id="form-add-book" class="styled-form">
+                        <div class="form-group">
+                            <label for="book-title">Título del Libro</label>
+                            <input type="text" id="book-title" placeholder="Ej: Acerquémonos a Jehová" required>
+                        </div>
+                        <button type="submit" class="btn-secondary">📘 Registrar Libro</button>
+                    </form>
+                </div>
+
+                <!-- Sub-formulario B: Crear Capítulo (Asociado a un Libro) -->
+                <div class="form-card">
+                    <h3 class="form-subtitle">2. Agregar Capítulo a un Libro</h3>
+                    <form id="form-add-chapter" class="styled-form">
+                        <div class="form-group">
+                            <label for="chapter-parent-book">Selecciona el Libro Padre</label>
+                            <select id="chapter-parent-book" required>
+                                <option value="" disabled selected>Cargando libros...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="chapter-title">Título del Capítulo</label>
+                            <input type="text" id="chapter-title" placeholder="Ej: Capítulo 5 - La sabiduría divina" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="chapter-link">Enlace URL (opcional)</label>
+                            <input type="url" id="chapter-link" placeholder="https://wol.jw.org/...">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="chapter-time">Tiempo estimado para este capítulo</label>
+                            <select id="chapter-time" required>
+                                <option value="<=10"><= 10 min</option>
+                                <option value="10-20" selected>10 - 20 min</option>
+                                <option value=">30">> 30 min</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-primary">📑 Guardar Capítulo</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- SECCIÓN 5: FINALIZADOS -->
+        <!-- =================================================================== -->
+        <section id="sec-completed" class="view-section">
+            <div class="section-header">
+                <button class="btn-back" data-target="sec-home">← Volver</button>
+                <h2>🎉 Opciones de estudio finalizadas</h2>
+            </div>
+
+            <div id="completed-items-container" class="items-container">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Cargando leídos y finalizados...</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>Registro Personal de Estudio Bíblico • Hecho con ❤️ para Laurita</p>
+    </footer>
+
+    <!-- Scripts de la Aplicación (Cargados en orden) -->
+    <script src="js/config.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
