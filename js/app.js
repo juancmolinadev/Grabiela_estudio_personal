@@ -923,7 +923,7 @@ const App = {
         const predicarMinutes = history.filter(i => i.tipo_actividad === 'predicar').reduce((a, b) => a + Number(b.minutos_invertidos || 0), 0);
         const reunionesCount = history.filter(i => i.tipo_actividad === 'estudiar_reuniones').length;
 
-        const monthlyGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "60.0");
+        const monthlyGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "45.0");
         const now = new Date();
         const monthMinutes = history.reduce((acc, curr) => {
             const d = new Date(curr.fecha);
