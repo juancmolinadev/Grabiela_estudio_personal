@@ -9,6 +9,7 @@ const DB = {
     // Claves para el respaldo LocalStorage
     STORAGE_ITEMS_KEY: "laurita_study_items",
     STORAGE_PROGRESS_KEY: "laurita_spiritual_progress",
+    STORAGE_DAILY_TEXTS_KEY: "laurita_daily_texts",
 
     // Datos iniciales de prueba para LocalStorage si está vacío
     getInitialMockItems() {
@@ -80,6 +81,7 @@ const DB = {
             {
                 id: "prog-1",
                 tipo_actividad: "predicar",
+                subtipo: "De casa en casa",
                 study_item_id: null,
                 minutos_invertidos: 120,
                 fecha: yesterday.toISOString()
@@ -87,9 +89,34 @@ const DB = {
             {
                 id: "prog-2",
                 tipo_actividad: "estudio_personal",
+                subtipo: null,
                 study_item_id: null,
                 minutos_invertidos: 45,
                 fecha: today.toISOString()
+            }
+        ];
+    },
+
+    getInitialMockDailyTexts() {
+        const todayStr = new Date().toISOString().split("T")[0];
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+        return [
+            {
+                id: "dt-mock-1",
+                fecha: todayStr,
+                versiculo: "Salmo 119:105",
+                texto_relacionado: "Tu palabra es una lámpara para mi pie y una luz para mi camino. Meditar en la palabra de Dios nos da guía clara para cada día.",
+                fecha_creacion: new Date().toISOString()
+            },
+            {
+                id: "dt-mock-2",
+                fecha: tomorrowStr,
+                versiculo: "Filipenses 4:6, 7",
+                texto_relacionado: "No se inquieten por nada; más bien, en toda situación, mediante la oración y el ruego presenten sus peticiones a Dios.",
+                fecha_creacion: new Date().toISOString()
             }
         ];
     },
@@ -123,6 +150,20 @@ const DB = {
         localStorage.setItem(this.STORAGE_PROGRESS_KEY, JSON.stringify(progressList));
     },
 
+    getLocalDailyTexts() {
+        const data = localStorage.getItem(this.STORAGE_DAILY_TEXTS_KEY);
+        if (!data) {
+            const initial = this.getInitialMockDailyTexts();
+            localStorage.setItem(this.STORAGE_DAILY_TEXTS_KEY, JSON.stringify(initial));
+            return initial;
+        }
+        return JSON.parse(data);
+    },
+
+    saveLocalDailyTexts(list) {
+        localStorage.setItem(this.STORAGE_DAILY_TEXTS_KEY, JSON.stringify(list));
+    },
+
     // --- FORMATEADOR Y DIAGNÓSTICO DE ERRORES SUPABASE ---
     formatError(error) {
         if (!error) return "Error desconocido";
@@ -130,34 +171,30 @@ const DB = {
         const msg = error.message || error.error_description || JSON.stringify(error);
         const code = error.code || "";
 
-        // 0. Path de URL inválido (incluyó /rest/v1/ en la URL)
         if (msg.includes("Invalid path specified in request URL")) {
             return {
                 title: "Ruta de URL de Supabase incorrecta.",
-                solution: "La URL en js/config.js tenía '/rest/v1/' al final. Ya la hemos corregido a 'https://giedvminqeijqdopwlai.supabase.co'.",
+                solution: "La URL en js/config.js tenía '/rest/v1/' al final. Se ha saneado en config.js.",
                 raw: msg
             };
         }
 
-        // 1. Tabla no existe
         if (code === "42P01" || msg.includes("relation") || msg.includes("does not exist")) {
             return {
-                title: "La tabla 'study_items' o 'spiritual_progress' no existe en Supabase.",
-                solution: "Debes ir al SQL Editor de Supabase y ejecutar todo el contenido del archivo 'supabase_schema.sql'.",
+                title: "Una de las tablas no existe en Supabase.",
+                solution: "Ejecuta el script SQL actualizado 'supabase_schema.sql' en el Editor SQL de tu proyecto en Supabase.",
                 raw: msg
             };
         }
 
-        // 2. RLS Bloqueando
         if (code === "42501" || msg.includes("row-level security") || msg.includes("RLS")) {
             return {
                 title: "Política de seguridad RLS bloqueando la operación.",
-                solution: "Asegúrate de ejecutar las sentencias CREATE POLICY del archivo 'supabase_schema.sql' en el SQL Editor de Supabase.",
+                solution: "Asegúrate de ejecutar las sentencias CREATE POLICY del archivo 'supabase_schema.sql' en Supabase.",
                 raw: msg
             };
         }
 
-        // 3. API Key inválida
         if (code === "PGRST301" || msg.includes("JWT") || msg.includes("apiKey") || msg.includes("Invalid API key") || msg.includes("401")) {
             return {
                 title: "La clave 'SUPABASE_ANON_KEY' es incorrecta.",
@@ -166,18 +203,17 @@ const DB = {
             };
         }
 
-        // 4. Error de Red / URL Errónea
         if (msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("URL")) {
             return {
                 title: "No se pudo conectar con la URL de Supabase.",
-                solution: "Verifica que SUPABASE_URL en js/config.js sea correcta (ej: https://xxxx.supabase.co) y tengas conexión a internet.",
+                solution: "Verifica que SUPABASE_URL en js/config.js sea correcta y tengas conexión a internet.",
                 raw: msg
             };
         }
 
         return {
             title: `Error de Supabase [${code}]: ${msg}`,
-            solution: "Revisa los detalles en la consola F12 de tu navegador o valida las políticas de tu proyecto en Supabase.",
+            solution: "Revisa los detalles en la consola F12 de tu navegador.",
             raw: msg
         };
     },
@@ -191,7 +227,7 @@ const DB = {
                 ok: false,
                 step: "CONFIG",
                 title: "Credenciales incompletas en js/config.js",
-                solution: "Abre js/config.js en VS Code y reemplaza 'TU_PROYECTO' y 'TU_SUPABASE_ANON_KEY' por tus credenciales de Supabase."
+                solution: "Abre js/config.js y reemplaza 'TU_PROYECTO' y 'TU_SUPABASE_ANON_KEY' por tus credenciales de Supabase."
             };
         }
 
@@ -206,33 +242,19 @@ const DB = {
         }
 
         try {
-            // Test 1: Leer study_items
-            const { data, error } = await client.from("study_items").select("id").limit(1);
+            const { error: err1 } = await client.from("study_items").select("id").limit(1);
+            if (err1) return { ok: false, step: "READ_ITEMS", ...this.formatError(err1) };
 
-            if (error) {
-                const formatted = this.formatError(error);
-                return {
-                    ok: false,
-                    step: "READ_ITEMS",
-                    ...formatted
-                };
-            }
+            const { error: err2 } = await client.from("spiritual_progress").select("id").limit(1);
+            if (err2) return { ok: false, step: "READ_PROGRESS", ...this.formatError(err2) };
 
-            // Test 2: Leer spiritual_progress
-            const { error: errorProg } = await client.from("spiritual_progress").select("id").limit(1);
-            if (errorProg) {
-                const formatted = this.formatError(errorProg);
-                return {
-                    ok: false,
-                    step: "READ_PROGRESS",
-                    ...formatted
-                };
-            }
+            const { error: err3 } = await client.from("daily_texts").select("id").limit(1);
+            if (err3) return { ok: false, step: "READ_DAILY_TEXTS", ...this.formatError(err3) };
 
             return {
                 ok: true,
                 title: "¡Conexión exitosa con Supabase! 🎉",
-                solution: "Todas las tablas y permisos RLS están configurados correctamente."
+                solution: "Todas las tablas (study_items, spiritual_progress, daily_texts) y RLS están listas."
             };
         } catch (err) {
             return {
@@ -243,11 +265,106 @@ const DB = {
         }
     },
 
-    // --- OPERACIONES PRINCIPALES ---
+    // --- MÉTODOS DE TEXTO DIARIO (DAILY TEXTS) ---
 
-    /**
-     * Obtener ítems de estudio con estado 'pendiente'
-     */
+    async getDailyTextByDate(dateStr) {
+        const client = initSupabase();
+        if (!client) {
+            const local = this.getLocalDailyTexts();
+            const found = local.find(dt => dt.fecha === dateStr);
+            return { data: found || null, error: null };
+        }
+
+        try {
+            const { data, error } = await client
+                .from("daily_texts")
+                .select("*")
+                .eq("fecha", dateStr)
+                .maybeSingle();
+
+            return { data, error };
+        } catch (err) {
+            console.error("Error al obtener texto diario por fecha:", err);
+            return { data: null, error: err };
+        }
+    },
+
+    async getAllDailyTexts() {
+        const client = initSupabase();
+        if (!client) {
+            const local = this.getLocalDailyTexts();
+            local.sort((a, b) => b.fecha.localeCompare(a.fecha));
+            return { data: local, error: null };
+        }
+
+        try {
+            const { data, error } = await client
+                .from("daily_texts")
+                .select("*")
+                .order("fecha", { ascending: false });
+
+            return { data, error };
+        } catch (err) {
+            console.error("Error al obtener todos los textos diarios:", err);
+            return { data: null, error: err };
+        }
+    },
+
+    async saveDailyText(textData) {
+        const client = initSupabase();
+        if (!client) {
+            const local = this.getLocalDailyTexts();
+            const existingIndex = local.findIndex(dt => dt.fecha === textData.fecha);
+            if (existingIndex >= 0) {
+                local[existingIndex] = { ...local[existingIndex], ...textData };
+            } else {
+                local.push({
+                    id: "dt-local-" + Date.now(),
+                    ...textData,
+                    fecha_creacion: new Date().toISOString()
+                });
+            }
+            this.saveLocalDailyTexts(local);
+            return { data: textData, error: null };
+        }
+
+        try {
+            const { data, error } = await client
+                .from("daily_texts")
+                .upsert([textData], { onConflict: "fecha" })
+                .select();
+
+            return { data: data ? data[0] : null, error };
+        } catch (err) {
+            console.error("Error al guardar texto diario:", err);
+            return { data: null, error: err };
+        }
+    },
+
+    async deleteDailyText(id) {
+        const client = initSupabase();
+        if (!client) {
+            let local = this.getLocalDailyTexts();
+            local = local.filter(dt => dt.id !== id);
+            this.saveLocalDailyTexts(local);
+            return { success: true, error: null };
+        }
+
+        try {
+            const { error } = await client
+                .from("daily_texts")
+                .delete()
+                .eq("id", id);
+
+            return { success: !error, error };
+        } catch (err) {
+            console.error("Error al eliminar texto diario:", err);
+            return { success: false, error: err };
+        }
+    },
+
+    // --- OPERACIONES DE ÍTEMS Y PROGRESO ---
+
     async getPendingStudyItems() {
         const client = initSupabase();
         if (!client) {
@@ -269,9 +386,6 @@ const DB = {
         }
     },
 
-    /**
-     * Obtener ítems de estudio con estado 'finalizado'
-     */
     async getFinishedStudyItems() {
         const client = initSupabase();
         if (!client) {
@@ -293,9 +407,6 @@ const DB = {
         }
     },
 
-    /**
-     * Obtener la lista de Libros (para el desplegable de capítulos)
-     */
     async getBooks() {
         const client = initSupabase();
         if (!client) {
@@ -317,9 +428,6 @@ const DB = {
         }
     },
 
-    /**
-     * Crear un nuevo ítem de estudio
-     */
     async createStudyItem(itemData) {
         const client = initSupabase();
         if (!client) {
@@ -349,20 +457,15 @@ const DB = {
         }
     },
 
-    /**
-     * Marcar ítem como finalizado y registrar automáticamente el progreso espiritual
-     */
     async markItemAsFinished(item) {
         const client = initSupabase();
         const now = new Date().toISOString();
 
-        // Determinar minutos según tiempo_estimado
         let minutos = 10;
         if (item.tiempo_estimado === "10-20") minutos = 15;
         if (item.tiempo_estimado === ">30") minutos = 30;
 
         if (!client) {
-            // Actualizar local items
             const localItems = this.getLocalItems();
             const target = localItems.find(i => i.id === item.id);
             if (target) {
@@ -371,7 +474,6 @@ const DB = {
                 this.saveLocalItems(localItems);
             }
 
-            // Crear local progress
             const localProgress = this.getLocalProgress();
             const newProgress = {
                 id: "prog-" + Date.now(),
@@ -387,7 +489,6 @@ const DB = {
         }
 
         try {
-            // 1. Actualizar estado del ítem
             const { error: updateError } = await client
                 .from("study_items")
                 .update({ estado: "finalizado", fecha_finalizado: now })
@@ -395,7 +496,6 @@ const DB = {
 
             if (updateError) throw updateError;
 
-            // 2. Insertar progreso espiritual automático
             const { error: progressError } = await client
                 .from("spiritual_progress")
                 .insert([{
@@ -414,9 +514,6 @@ const DB = {
         }
     },
 
-    /**
-     * Registrar manualmente un avance espiritual
-     */
     async createSpiritualProgress(progressData) {
         const client = initSupabase();
         if (!client) {
@@ -444,14 +541,10 @@ const DB = {
         }
     },
 
-    /**
-     * Obtener todo el historial de progreso espiritual
-     */
     async getSpiritualProgressHistory() {
         const client = initSupabase();
         if (!client) {
             const local = this.getLocalProgress();
-            // Ordenar por fecha descendente
             local.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
             return { data: local, error: null };
         }

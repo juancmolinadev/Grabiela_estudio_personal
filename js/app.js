@@ -1,9 +1,8 @@
 /**
  * LÓGICA DE LA APLICACIÓN WEB (SPA) — ESTUDIO BÍBLICO DE LAURITA
  * 
- * Controlador principal que maneja las vistas, estado de la interfaz,
- * navegación, filtros, gráficos de estadísticas, eventos de usuario y
- * el Menú Secreto de Desarrollador (activado con 7 toques en el footer).
+ * Controlador principal que maneja las vistas, tema oscuro, Texto Diario,
+ * navegación, filtros, estadísticas y Menú de Desarrollador / Admin.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,20 +17,49 @@ const App = {
         finishedItems: [],
         books: [],
         progressHistory: [],
+        dailyTexts: [],
+        currentTodayText: null,
         timeFilter: "all",
         chartInstance: null,
         footerClicks: 0,
-        footerTimer: null
+        footerTimer: null,
+        theme: "dark"
     },
 
     // --- INICIALIZACIÓN ---
     init() {
+        this.initTheme();
         this.checkSupabaseConfig();
         this.setupNavigation();
         this.setupEventListeners();
         this.setupDeveloperSecretTrigger();
         this.setInitialDates();
         this.loadBooksDropdown();
+        this.loadDailyTextHome();
+    },
+
+    // --- MANEJO DE TEMA (DARK MODE POR DEFECTO) ---
+    initTheme() {
+        const savedTheme = localStorage.getItem("laurita_theme") || "dark";
+        this.setTheme(savedTheme);
+
+        const toggleBtn = document.getElementById("theme-toggle-btn");
+        toggleBtn?.addEventListener("click", () => {
+            const nextTheme = this.state.theme === "dark" ? "light" : "dark";
+            this.setTheme(nextTheme);
+        });
+    },
+
+    setTheme(theme) {
+        this.state.theme = theme;
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("laurita_theme", theme);
+
+        const toggleBtn = document.getElementById("theme-toggle-btn");
+        if (toggleBtn) {
+            toggleBtn.textContent = theme === "dark" ? "🌙" : "☀️";
+            toggleBtn.title = theme === "dark" ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro";
+        }
     },
 
     // Comprueba si se está ejecutando en modo demo o con Supabase real
@@ -45,18 +73,15 @@ const App = {
 
     // --- SISTEMA DE NAVEGACIÓN Y VISTAS (SPA) ---
     setupNavigation() {
-        // Botones de inicio -> Ir a secciones
         document.getElementById("btn-goto-time")?.addEventListener("click", () => this.showView("sec-time"));
         document.getElementById("btn-goto-stats")?.addEventListener("click", () => this.showView("sec-stats"));
         document.getElementById("btn-goto-log")?.addEventListener("click", () => this.showView("sec-log"));
         document.getElementById("btn-goto-add")?.addEventListener("click", () => this.showView("sec-add"));
 
-        // Links de navegación superior
         document.getElementById("nav-home-btn")?.addEventListener("click", () => this.showView("sec-home"));
         document.getElementById("nav-brand-btn")?.addEventListener("click", () => this.showView("sec-home"));
         document.getElementById("nav-completed-btn")?.addEventListener("click", () => this.showView("sec-completed"));
 
-        // Botones de regresar (← Volver)
         document.querySelectorAll(".btn-back").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const target = e.target.getAttribute("data-target") || "sec-home";
@@ -64,13 +89,20 @@ const App = {
             });
         });
 
-        // Modales de Diagnóstico y Desarrollador
+        // Modales
         document.getElementById("btn-banner-diag")?.addEventListener("click", () => this.runDiagnostic());
         document.getElementById("btn-retry-diag")?.addEventListener("click", () => this.runDiagnostic());
         document.getElementById("btn-close-modal")?.addEventListener("click", () => this.closeDiagnosticModal());
         
-        // Controles del Menú de Desarrollador
+        // Controles del Menú de Desarrollador / Admin
         document.getElementById("btn-close-dev-modal")?.addEventListener("click", () => this.closeDevModal());
+        document.getElementById("btn-close-dt-modal")?.addEventListener("click", () => this.closeDailyTextAdminModal());
+
+        document.getElementById("btn-dev-admin-daily-text")?.addEventListener("click", () => {
+            this.closeDevModal();
+            this.openDailyTextAdminModal();
+        });
+
         document.getElementById("btn-dev-run-diag")?.addEventListener("click", () => {
             this.closeDevModal();
             this.runDiagnostic();
@@ -93,23 +125,20 @@ const App = {
         footerBtn.addEventListener("click", () => {
             this.state.footerClicks++;
 
-            // Reiniciar contador si pasan 3.5 segundos sin pulsar
             clearTimeout(this.state.footerTimer);
             this.state.footerTimer = setTimeout(() => {
                 this.state.footerClicks = 0;
             }, 3500);
 
-            // Mostrar cuenta regresiva sutil en los últimos toques
             if (this.state.footerClicks >= 4 && this.state.footerClicks < 7) {
                 const remaining = 7 - this.state.footerClicks;
-                this.showToast(`Estás a ${remaining} toque${remaining > 1 ? 's' : ''} de ser desarrollador... 🛠️`, "info");
+                this.showToast(`Estás a ${remaining} toque${remaining > 1 ? 's' : ''} del menú de Admin... 🛠️`, "info");
             }
 
-            // Al llegar a 7 toques -> Desbloquear Menú de Desarrollador
             if (this.state.footerClicks >= 7) {
                 this.state.footerClicks = 0;
                 clearTimeout(this.state.footerTimer);
-                this.showToast("🛠️ ¡Modo Desarrollador Activado!", "success");
+                this.showToast("🛠️ ¡Menú de Administrador Activado!", "success");
                 this.openDevModal();
             }
         });
@@ -123,6 +152,18 @@ const App = {
         document.getElementById("dev-menu-modal")?.classList.add("hidden");
     },
 
+    openDailyTextAdminModal() {
+        document.getElementById("daily-text-admin-modal")?.classList.remove("hidden");
+        const dateInput = document.getElementById("admin-dt-date");
+        if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
+        this.loadAdminDailyTexts();
+    },
+
+    closeDailyTextAdminModal() {
+        document.getElementById("daily-text-admin-modal")?.classList.add("hidden");
+        this.loadDailyTextHome();
+    },
+
     showView(viewId) {
         document.querySelectorAll(".view-section").forEach(sec => sec.classList.remove("active"));
 
@@ -132,7 +173,9 @@ const App = {
             this.state.activeView = viewId;
         }
 
-        if (viewId === "sec-time") {
+        if (viewId === "sec-home") {
+            this.loadDailyTextHome();
+        } else if (viewId === "sec-time") {
             this.loadPendingSection();
         } else if (viewId === "sec-stats") {
             this.loadStatsSection();
@@ -164,7 +207,7 @@ const App = {
             });
         });
 
-        // 2. Filtros de Actividades cotidianas en Sección 1
+        // 2. Filtros de Actividades cotidianas
         const activityChips = document.querySelectorAll("#activity-filter-group .chip");
         activityChips.forEach(chip => {
             chip.addEventListener("click", (e) => {
@@ -178,7 +221,7 @@ const App = {
             });
         });
 
-        // 3. Pestañas en Sección 4 (Agregar opciones)
+        // 3. Pestañas en Sección 4
         const tabBtns = document.querySelectorAll(".tab-btn");
         tabBtns.forEach(btn => {
             btn.addEventListener("click", (e) => {
@@ -191,17 +234,25 @@ const App = {
             });
         });
 
-        // 4. Formulario de Ítems Simples (Atalayas, Textos, Versículos)
+        // 4. Subopciones de Predicación en Formulario de Registro
+        const activitySelect = document.getElementById("log-activity-type");
+        const preachingSubContainer = document.getElementById("preaching-suboption-container");
+        activitySelect?.addEventListener("change", (e) => {
+            if (e.target.value === "predicar") {
+                preachingSubContainer?.classList.remove("hidden");
+            } else {
+                preachingSubContainer?.classList.add("hidden");
+                const subSelect = document.getElementById("log-preaching-suboption");
+                if (subSelect) subSelect.value = "";
+            }
+        });
+
+        // 5. Formularios
         document.getElementById("form-add-item")?.addEventListener("submit", (e) => this.handleAddSingleItem(e));
-
-        // 5. Formulario de Libros
         document.getElementById("form-add-book")?.addEventListener("submit", (e) => this.handleAddBook(e));
-
-        // 6. Formulario de Capítulos
         document.getElementById("form-add-chapter")?.addEventListener("submit", (e) => this.handleAddChapter(e));
-
-        // 7. Formulario de Registro de Progreso Espiritual
         document.getElementById("form-log-progress")?.addEventListener("submit", (e) => this.handleLogProgress(e));
+        document.getElementById("form-admin-daily-text")?.addEventListener("submit", (e) => this.handleSaveDailyText(e));
     },
 
     setInitialDates() {
@@ -212,7 +263,160 @@ const App = {
         }
     },
 
-    // --- MODAL Y DIAGNÓSTICO DE SUPABASE ---
+    // --- SECCIÓN: TEXTO DIARIO DEL DÍA EN HOME ---
+    async loadDailyTextHome() {
+        const container = document.getElementById("daily-text-container");
+        if (!container) return;
+
+        const todayStr = new Date().toISOString().split("T")[0];
+        const { data, error } = await DB.getDailyTextByDate(todayStr);
+
+        if (!data) {
+            container.innerHTML = `
+                <div class="dt-header">
+                    <div class="dt-title-group">
+                        <span class="dt-badge">Texto Diario</span>
+                        <span class="dt-verse">Hoy</span>
+                    </div>
+                    <span class="dt-date">${this.formatNiceDate(todayStr)}</span>
+                </div>
+                <div class="dt-body">
+                    No hay un texto diario registrado para el día de hoy. Puedes agregar uno desde el menú de Administrador.
+                </div>
+            `;
+            return;
+        }
+
+        this.state.currentTodayText = data;
+        const readKey = `laurita_read_dt_${todayStr}`;
+        const isRead = localStorage.getItem(readKey) === "true";
+
+        container.innerHTML = `
+            <div class="dt-header">
+                <div class="dt-title-group">
+                    <span class="dt-badge">Texto Diario</span>
+                    <span class="dt-verse">${this.escapeHtml(data.versiculo)}</span>
+                </div>
+                <span class="dt-date">${this.formatNiceDate(todayStr)}</span>
+            </div>
+            <div class="dt-body">
+                "${this.escapeHtml(data.texto_relacionado)}"
+            </div>
+            <div class="dt-footer">
+                <button id="btn-read-daily-text" class="btn-read-dt ${isRead ? 'completed' : ''}" ${isRead ? 'disabled' : ''}>
+                    ${isRead ? '✓ Leído hoy ✨ (+5 min)' : '✓ Ya se leyó (+5 min)'}
+                </button>
+            </div>
+        `;
+
+        if (!isRead) {
+            document.getElementById("btn-read-daily-text")?.addEventListener("click", () => this.handleMarkDailyTextRead(todayStr));
+        }
+    },
+
+    async handleMarkDailyTextRead(todayStr) {
+        const btn = document.getElementById("btn-read-daily-text");
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Guardando...";
+        }
+
+        const progressData = {
+            tipo_actividad: "estudio_personal",
+            minutos_invertidos: 5,
+            fecha: new Date().toISOString()
+        };
+
+        const { data, error } = await DB.createSpiritualProgress(progressData);
+        if (error) {
+            this.showToast("Error al registrar los 5 minutos.", "error");
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "✓ Ya se leyó (+5 min)";
+            }
+            return;
+        }
+
+        localStorage.setItem(`laurita_read_dt_${todayStr}`, "true");
+        this.showToast("¡Excelente Laurita! 📖 Se han sumado 5 minutos a tu progreso espiritual.", "success");
+        this.loadDailyTextHome();
+    },
+
+    // --- MÓDULO ADMIN DE TEXTOS DIARIOS ---
+    async loadAdminDailyTexts() {
+        const container = document.getElementById("admin-dt-list-container");
+        if (!container) return;
+
+        container.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Cargando textos programados...</p></div>`;
+
+        const { data, error } = await DB.getAllDailyTexts();
+        if (error || !data || data.length === 0) {
+            container.innerHTML = `<p class="empty-state">No hay textos diarios programados aún.</p>`;
+            return;
+        }
+
+        this.state.dailyTexts = data;
+
+        let html = "";
+        data.forEach(item => {
+            html += `
+                <div class="history-row">
+                    <div>
+                        <div style="font-weight: 700; color: var(--primary-teal);">${this.escapeHtml(item.versiculo)}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">${this.escapeHtml(item.texto_relacionado)}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">📅 Corresponde al: ${this.formatNiceDate(item.fecha)}</div>
+                    </div>
+                    <button class="btn-danger-sm" onclick="App.handleDeleteDailyText('${item.id}')">🗑️ Eliminar</button>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    },
+
+    async handleSaveDailyText(e) {
+        e.preventDefault();
+        const dateVal = document.getElementById("admin-dt-date").value;
+        const verse = document.getElementById("admin-dt-verse").value.trim();
+        const text = document.getElementById("admin-dt-text").value.trim();
+
+        if (!dateVal || !verse || !text) {
+            this.showToast("Completa la fecha, versículo y texto del día.", "error");
+            return;
+        }
+
+        const textData = {
+            fecha: dateVal,
+            versiculo: verse,
+            texto_relacionado: text
+        };
+
+        const { data, error } = await DB.saveDailyText(textData);
+        if (error) {
+            const formatted = DB.formatError(error);
+            this.showToast(`Error al guardar: ${formatted.title}`, "error");
+            return;
+        }
+
+        this.showToast("¡Texto diario guardado con éxito!", "success");
+        document.getElementById("form-admin-daily-text").reset();
+        document.getElementById("admin-dt-date").value = new Date().toISOString().split("T")[0];
+        this.loadAdminDailyTexts();
+    },
+
+    async handleDeleteDailyText(id) {
+        if (!confirm("¿Deseas eliminar este texto diario programado?")) return;
+
+        const res = await DB.deleteDailyText(id);
+        if (res.success) {
+            this.showToast("Texto diario eliminado.", "success");
+            this.loadAdminDailyTexts();
+        } else {
+            this.showToast("Error al eliminar.", "error");
+        }
+    },
+
+    // --- DIAGNÓSTICO SUPABASE ---
     async runDiagnostic() {
         const modal = document.getElementById("diagnostic-modal");
         const statusBox = document.getElementById("diag-status-box");
@@ -481,7 +685,11 @@ const App = {
 
         let html = "";
         history.slice(0, 15).forEach(item => {
-            const actName = activityNames[item.tipo_actividad] || item.tipo_actividad;
+            let actName = activityNames[item.tipo_actividad] || item.tipo_actividad;
+            if (item.tipo_actividad === "predicar" && item.subtipo) {
+                actName = `🚪 Predicación (${item.subtipo})`;
+            }
+
             const dateFormatted = new Date(item.fecha).toLocaleDateString("es-ES", {
                 day: 'numeric',
                 month: 'short',
@@ -533,6 +741,9 @@ const App = {
             (categories.estudio_tiempo_libre / 60).toFixed(1)
         ];
 
+        const isDark = this.state.theme === "dark";
+        const textColor = isDark ? "#cbd5e1" : "#64748b";
+
         this.state.chartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -541,10 +752,10 @@ const App = {
                     label: 'Horas acumuladas',
                     data: dataHours,
                     backgroundColor: [
-                        '#0d9488',
-                        '#8b5cf6',
-                        '#3b82f6',
-                        '#f59e0b',
+                        '#14b8a6',
+                        '#a78bfa',
+                        '#60a5fa',
+                        '#fbbf24',
                         '#10b981'
                     ],
                     borderRadius: 8
@@ -557,9 +768,13 @@ const App = {
                     legend: { display: false }
                 },
                 scales: {
+                    x: {
+                        ticks: { color: textColor }
+                    },
                     y: {
                         beginAtZero: true,
-                        title: { display: true, text: 'Horas' }
+                        ticks: { color: textColor },
+                        title: { display: true, text: 'Horas', color: textColor }
                     }
                 }
             }
@@ -572,6 +787,7 @@ const App = {
         const activityType = document.getElementById("log-activity-type").value;
         const minutes = parseInt(document.getElementById("log-minutes").value, 10);
         const dateVal = document.getElementById("log-date").value;
+        const subOption = document.getElementById("log-preaching-suboption").value;
 
         if (!activityType || isNaN(minutes) || minutes <= 0) {
             this.showToast("Por favor completa los campos requeridos con valores válidos.", "error");
@@ -586,6 +802,10 @@ const App = {
             fecha: dateObj.toISOString()
         };
 
+        if (activityType === "predicar" && subOption) {
+            progressData.subtipo = subOption;
+        }
+
         const { data, error } = await DB.createSpiritualProgress(progressData);
         if (error) {
             const formatted = DB.formatError(error);
@@ -596,6 +816,7 @@ const App = {
 
         this.showToast("¡Registro de tiempo guardado con éxito! 🌟", "success");
         document.getElementById("form-log-progress").reset();
+        document.getElementById("preaching-suboption-container")?.classList.add("hidden");
         this.setInitialDates();
         
         setTimeout(() => this.showView("sec-stats"), 600);
@@ -795,6 +1016,16 @@ const App = {
     },
 
     // --- UTILIDADES ---
+    formatNiceDate(dateStr) {
+        if (!dateStr) return "";
+        const parts = dateStr.split("-");
+        if (parts.length === 3) {
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            return dateObj.toLocaleDateString("es-ES", { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+        return dateStr;
+    },
+
     showToast(message, type = "success") {
         const container = document.getElementById("toast-container");
         if (!container) return;
@@ -807,20 +1038,19 @@ const App = {
 
         setTimeout(() => {
             toast.style.opacity = "0";
+            toast.style.transform = "translateY(10px)";
+            toast.style.transition = "all 0.3s ease";
             setTimeout(() => toast.remove(), 300);
-        }, 4000);
+        }, 3500);
     },
 
     escapeHtml(str) {
         if (!str) return "";
-        return str.replace(/[&<>"']/g, function(m) {
-            return {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            }[m];
-        });
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 };

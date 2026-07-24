@@ -1,10 +1,49 @@
 /* ==========================================================================
    ESTILOS CSS — REGISTRO DE ESTUDIO BÍBLICO DE LAURITA
-   Paleta clara, minimalista, legible y totalmente responsive
+   Soporte para Modo Oscuro (Por Defecto) y Modo Claro
    ========================================================================== */
 
-/* --- VARIABLES Y TEMA DE COLOR --- */
+/* --- TEMA OSCURO POR DEFECTO --- */
 :root {
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --bg-input: #334155;
+    --border-color: #334155;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    
+    --primary-teal: #14b8a6;
+    --primary-teal-light: rgba(20, 184, 166, 0.15);
+    --primary-teal-dark: #0d9488;
+    
+    --accent-purple: #a78bfa;
+    --accent-purple-light: rgba(167, 139, 250, 0.15);
+    
+    --accent-blue: #60a5fa;
+    --accent-blue-light: rgba(96, 165, 250, 0.15);
+    
+    --accent-amber: #fbbf24;
+    --accent-amber-light: rgba(251, 191, 36, 0.15);
+
+    --status-completed: #10b981;
+    --status-completed-bg: rgba(16, 185, 129, 0.2);
+    
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-full: 9999px;
+
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- TEMA CLARO OPCIONAL --- */
+[data-theme="light"] {
     --bg-main: #f8fafc;
     --bg-card: #ffffff;
     --bg-input: #f1f5f9;
@@ -33,13 +72,6 @@
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 20px;
-    --radius-full: 9999px;
-
-    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* --- RESET Y BASES --- */
@@ -58,6 +90,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* --- HEADER Y NAVEGACIÓN --- */
@@ -68,6 +101,7 @@ body {
     top: 0;
     z-index: 100;
     box-shadow: var(--shadow-sm);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .header-container {
@@ -88,7 +122,13 @@ body {
     cursor: pointer;
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .header-nav {
@@ -110,14 +150,35 @@ body {
 
 .nav-link:hover, .nav-link.active {
     background-color: var(--primary-teal-light);
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
+}
+
+/* TOGGLE TEMA (DARK/LIGHT) */
+.theme-toggle-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-full);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-primary);
+}
+
+.theme-toggle-btn:hover {
+    transform: scale(1.08);
+    border-color: var(--primary-teal);
 }
 
 /* --- DEMO BANNER --- */
 .demo-banner {
-    background-color: #fffbeb;
-    border-bottom: 1px solid #fef3c7;
-    color: #92400e;
+    background-color: rgba(245, 158, 11, 0.15);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
     padding: 0.6rem 1.25rem;
     font-size: 0.85rem;
     text-align: center;
@@ -130,22 +191,22 @@ body {
 .btn-text-link {
     background: none;
     border: none;
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
     font-weight: 700;
     text-decoration: underline;
     cursor: pointer;
     padding: 0 0.25rem;
 }
 
-/* --- MODAL DE DIAGNÓSTICO Y DESARROLLADOR --- */
+/* --- MODALES --- */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
     z-index: 2000;
     display: flex;
     align-items: center;
@@ -160,6 +221,7 @@ body {
 
 .modal-card {
     background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     max-width: 540px;
     width: 100%;
@@ -167,6 +229,10 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+.modal-card.large-modal {
+    max-width: 680px;
 }
 
 .modal-header {
@@ -193,7 +259,7 @@ body {
 
 .modal-body {
     padding: 1.25rem;
-    max-height: 70vh;
+    max-height: 75vh;
     overflow-y: auto;
 }
 
@@ -231,7 +297,7 @@ body {
 }
 
 .raw-error-details pre {
-    background: #1e293b;
+    background: #0f172a;
     color: #f8fafc;
     padding: 0.75rem;
     border-radius: var(--radius-sm);
@@ -248,7 +314,7 @@ body {
     background-color: var(--bg-main);
 }
 
-/* MENÚ DE DESARROLLADOR */
+/* MENÚ DE DESARROLLADOR / ADMIN */
 .dev-menu-intro {
     font-size: 0.9rem;
     color: var(--text-secondary);
@@ -259,7 +325,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.5rem;
 }
 
 .dev-action-btn {
@@ -277,9 +343,13 @@ body {
 
 .dev-action-btn:hover {
     border-color: var(--primary-teal);
-    background-color: #ffffff;
     transform: translateY(-2px);
     box-shadow: var(--shadow-sm);
+}
+
+.dev-action-btn.highlighted {
+    border-color: var(--primary-teal);
+    background-color: var(--primary-teal-light);
 }
 
 .dev-btn-icon {
@@ -300,15 +370,6 @@ body {
 .dev-btn-text span {
     font-size: 0.78rem;
     color: var(--text-secondary);
-}
-
-.dev-future-box {
-    background-color: var(--primary-teal-light);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
-    color: var(--primary-teal-dark);
-    text-align: center;
 }
 
 /* --- CONTENIDO PRINCIPAL Y SECCIONES SPA --- */
@@ -337,8 +398,8 @@ body {
 /* --- HERO CARD (PANTALLA DE INICIO) --- */
 .hero-card {
     text-align: center;
-    padding: 1.75rem 1rem 1.25rem;
-    margin-bottom: 1.5rem;
+    padding: 1.25rem 1rem 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .welcome-title {
@@ -346,13 +407,105 @@ body {
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.02em;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.25rem;
 }
 
 .welcome-subtitle {
     font-size: 1.05rem;
     color: var(--text-secondary);
     font-weight: 400;
+}
+
+/* --- TARJETA DE TEXTO DIARIO --- */
+.daily-text-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--primary-teal);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.dt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.dt-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dt-badge {
+    background-color: var(--primary-teal-light);
+    color: var(--primary-teal);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.dt-verse {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary-teal);
+}
+
+.dt-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.dt-body {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    background-color: var(--bg-main);
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+    font-style: italic;
+}
+
+.dt-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.btn-read-dt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--primary-teal);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-read-dt:hover {
+    background-color: var(--primary-teal-dark);
+}
+
+.btn-read-dt.completed {
+    background-color: var(--status-completed-bg);
+    color: var(--status-completed);
+    border: 1px solid var(--status-completed);
+    cursor: default;
 }
 
 /* --- REJILLA DE ACCIONES PRINCIPALES --- */
@@ -498,7 +651,7 @@ body {
     background-color: var(--primary-teal);
     color: white;
     border-color: var(--primary-teal);
-    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.3);
 }
 
 .chip-activity.active {
@@ -525,7 +678,7 @@ body {
 .category-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
     margin-bottom: 0.75rem;
     padding-bottom: 0.35rem;
     border-bottom: 2px solid var(--primary-teal-light);
@@ -554,7 +707,6 @@ body {
 
 .study-item-card:hover {
     border-color: var(--primary-teal);
-    background-color: #ffffff;
 }
 
 .item-left {
@@ -576,7 +728,7 @@ body {
     cursor: pointer;
     transition: var(--transition);
     flex-shrink: 0;
-    background: white;
+    background: var(--bg-card);
 }
 
 .custom-checkbox:hover {
@@ -617,7 +769,7 @@ body {
 
 .time-badge {
     background-color: var(--primary-teal-light);
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
     padding: 0.15rem 0.5rem;
     border-radius: var(--radius-full);
     font-weight: 600;
@@ -709,19 +861,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.6rem 0.85rem;
+    padding: 0.65rem 0.85rem;
     background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     font-size: 0.85rem;
 }
 
 .history-type {
     font-weight: 600;
-    text-transform: capitalize;
 }
 
 .history-time {
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
     font-weight: 700;
 }
 
@@ -741,7 +893,7 @@ body {
 .form-subtitle {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
     margin-bottom: 1rem;
     padding-bottom: 0.25rem;
     border-bottom: 1px solid var(--border-color);
@@ -757,6 +909,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+}
+
+.form-group.hidden {
+    display: none;
 }
 
 .form-row {
@@ -775,6 +931,7 @@ input[type="text"],
 input[type="url"],
 input[type="number"],
 input[type="date"],
+textarea,
 select {
     width: 100%;
     padding: 0.65rem 0.85rem;
@@ -788,13 +945,12 @@ select {
     outline: none;
 }
 
-input:focus, select:focus {
+input:focus, textarea:focus, select:focus {
     border-color: var(--primary-teal);
-    background-color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    box-shadow: 0 0 0 3px var(--primary-teal-light);
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary, .btn-secondary, .btn-danger {
     padding: 0.75rem 1.25rem;
     border-radius: var(--radius-md);
     border: none;
@@ -810,7 +966,7 @@ input:focus, select:focus {
 .btn-primary {
     background-color: var(--primary-teal);
     color: white;
-    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.3);
 }
 
 .btn-primary:hover {
@@ -823,7 +979,23 @@ input:focus, select:focus {
 }
 
 .btn-secondary:hover {
-    background-color: #ddd6fe;
+    filter: brightness(1.1);
+}
+
+.btn-danger-sm {
+    background: none;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-danger-sm:hover {
+    background-color: #ef4444;
+    color: white;
 }
 
 /* --- TABS --- */
@@ -849,7 +1021,7 @@ input:focus, select:focus {
 
 .tab-btn.active {
     background-color: var(--primary-teal-light);
-    color: var(--primary-teal-dark);
+    color: var(--primary-teal);
 }
 
 .tab-content {
@@ -865,15 +1037,16 @@ input:focus, select:focus {
     position: fixed;
     bottom: 1.5rem;
     right: 1.5rem;
-    z-index: 1000;
+    z-index: 3000;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
 .toast {
-    background: var(--text-primary);
-    color: white;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     padding: 0.75rem 1.25rem;
     border-radius: var(--radius-md);
     font-size: 0.85rem;
@@ -882,8 +1055,8 @@ input:focus, select:focus {
     animation: slideUp 0.3s ease-out;
 }
 
-.toast.success { background-color: var(--primary-teal-dark); }
-.toast.error { background-color: #ef4444; }
+.toast.success { border-left: 4px solid var(--primary-teal); }
+.toast.error { border-left: 4px solid #ef4444; }
 
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(12px); }
@@ -926,8 +1099,8 @@ input:focus, select:focus {
 }
 
 .app-footer:hover {
-    color: var(--primary-teal-dark);
-    background-color: rgba(13, 148, 136, 0.03);
+    color: var(--primary-teal);
+    background-color: var(--primary-teal-light);
 }
 
 .app-footer:active {

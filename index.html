@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,10 +32,13 @@
                 <span class="brand-icon">✨</span>
                 <span class="brand-title">Estudio Laurita</span>
             </button>
-            <nav class="header-nav">
-                <button id="nav-home-btn" class="nav-link active" title="Inicio">🏠 Inicio</button>
-                <button id="nav-completed-btn" class="nav-link" title="Finalizados">✓ Finalizados</button>
-            </nav>
+            <div class="header-right">
+                <nav class="header-nav">
+                    <button id="nav-home-btn" class="nav-link active" title="Inicio">🏠 Inicio</button>
+                    <button id="nav-completed-btn" class="nav-link" title="Finalizados">✓ Finalizados</button>
+                </nav>
+                <button id="theme-toggle-btn" class="theme-toggle-btn" title="Cambiar tema (Oscuro / Claro)" aria-label="Conmutar tema">🌙</button>
+            </div>
         </div>
     </header>
 
@@ -71,18 +74,27 @@
         </div>
     </div>
 
-    <!-- Modal del Menú de Desarrollador (Acceso Secreto con 7 Toques en el Footer) -->
+    <!-- Modal del Menú de Desarrollador / Administrador -->
     <div id="dev-menu-modal" class="modal-overlay hidden">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>🛠️ Menú de Desarrollador</h3>
+                <h3>🛠️ Menú de Desarrollador / Admin</h3>
                 <button id="btn-close-dev-modal" class="btn-close">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="dev-menu-intro">Herramientas técnicas y de diagnóstico del sistema:</p>
+                <p class="dev-menu-intro">Herramientas de administración y diagnóstico del sistema:</p>
                 
                 <div class="dev-actions-list">
-                    <!-- Opción 1: Diagnóstico BD -->
+                    <!-- Opción 1: Administrar Textos Diarios -->
+                    <button id="btn-dev-admin-daily-text" class="dev-action-btn highlighted">
+                        <span class="dev-btn-icon">📖</span>
+                        <div class="dev-btn-text">
+                            <strong>Administrar Textos Diarios</strong>
+                            <span>Ingresar versículo, lectura y fecha para varios días</span>
+                        </div>
+                    </button>
+
+                    <!-- Opción 2: Diagnóstico BD -->
                     <button id="btn-dev-run-diag" class="dev-action-btn">
                         <span class="dev-btn-icon">🔍</span>
                         <div class="dev-btn-text">
@@ -91,7 +103,7 @@
                         </div>
                     </button>
 
-                    <!-- Opción 2: Limpiar Caché -->
+                    <!-- Opción 3: Limpiar Caché -->
                     <button id="btn-dev-clear-cache" class="dev-action-btn">
                         <span class="dev-btn-icon">🧹</span>
                         <div class="dev-btn-text">
@@ -100,7 +112,7 @@
                         </div>
                     </button>
 
-                    <!-- Opción 3: Imprimir Estado -->
+                    <!-- Opción 4: Imprimir Estado -->
                     <button id="btn-dev-log-data" class="dev-action-btn">
                         <span class="dev-btn-icon">📋</span>
                         <div class="dev-btn-text">
@@ -109,9 +121,44 @@
                         </div>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="dev-future-box">
-                    <p>✨ <em>Espacio reservado para futuras funciones (Sistema de Recompensas, Logros y Configuración).</em></p>
+    <!-- Modal para Administración de Textos Diarios -->
+    <div id="daily-text-admin-modal" class="modal-overlay hidden">
+        <div class="modal-card large-modal">
+            <div class="modal-header">
+                <h3>📖 Administrador de Textos Diarios</h3>
+                <button id="btn-close-dt-modal" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-card margin-bottom">
+                    <h4 class="form-subtitle">➕ Agregar o Editar Texto Diario</h4>
+                    <form id="form-admin-daily-text" class="styled-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="admin-dt-date">Fecha correspondiente</label>
+                                <input type="date" id="admin-dt-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-dt-verse">Versículo relacionado</label>
+                                <input type="text" id="admin-dt-verse" placeholder="Ej: Salmo 119:105" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-dt-text">Texto / Comentario correspondiente</label>
+                            <textarea id="admin-dt-text" rows="4" placeholder="Ingresa aquí el texto del día..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">💾 Guardar Texto Diario</button>
+                    </form>
+                </div>
+
+                <div class="history-card">
+                    <h4 class="form-subtitle">📅 Textos Diarios Programados</h4>
+                    <div id="admin-dt-list-container" class="history-list">
+                        <!-- Generado dinámicamente -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -127,6 +174,11 @@
             <div class="hero-card">
                 <h1 class="welcome-title">Bienvenida Laurita</h1>
                 <p class="welcome-subtitle">¿Qué deseas hacer hoy?</p>
+            </div>
+
+            <!-- SECCIÓN: TEXTO DIARIO DEL DÍA -->
+            <div id="daily-text-container" class="daily-text-card">
+                <!-- Se llena dinámicamente desde JS -->
             </div>
 
             <div class="action-grid">
@@ -280,6 +332,19 @@
                             <option value="estudiar_reuniones">Estudiar las reuniones</option>
                             <option value="estudio_personal">Estudio personal</option>
                             <option value="estudio_grupo">Estudio en grupo</option>
+                        </select>
+                    </div>
+
+                    <!-- Subopción dinámicamente visible si selecciona Predicar -->
+                    <div id="preaching-suboption-container" class="form-group hidden">
+                        <label for="log-preaching-suboption">Subopción de Predicación</label>
+                        <select id="log-preaching-suboption">
+                            <option value="" disabled selected>Selecciona una subopción</option>
+                            <option value="Exhibidor">Exhibidor</option>
+                            <option value="Informal">Informal</option>
+                            <option value="De casa en casa">De casa en casa</option>
+                            <option value="Cartas">Cartas</option>
+                            <option value="Revisitas">Revisitas</option>
                         </select>
                     </div>
 
