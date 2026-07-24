@@ -21,9 +21,11 @@ const App = {
         currentTodayText: null,
         timeFilter: "all",
         chartInstance: null,
+        distributionChartInstance: null,
         footerClicks: 0,
         footerTimer: null,
-        theme: "dark"
+        theme: "dark",
+        selectedDate: new Date()
     },
 
     // --- INICIALIZACIÓN ---
@@ -80,6 +82,11 @@ const App = {
         document.getElementById("nav-home-btn")?.addEventListener("click", () => this.showView("sec-home"));
         document.getElementById("nav-brand-btn")?.addEventListener("click", () => this.showView("sec-home"));
         document.getElementById("nav-completed-btn")?.addEventListener("click", () => this.showView("sec-completed"));
+
+        // Selector de meses
+        document.getElementById("btn-prev-month")?.addEventListener("click", () => this.changeSelectedMonth(-1));
+        document.getElementById("btn-next-month")?.addEventListener("click", () => this.changeSelectedMonth(1));
+        document.getElementById("btn-this-month")?.addEventListener("click", () => this.resetToCurrentMonth());
 
         document.querySelectorAll(".btn-back").forEach(btn => {
             btn.addEventListener("click", (e) => {
@@ -633,9 +640,64 @@ const App = {
     },
 
     // --- SECCIÓN 2: PROGRESO Y ESTADÍSTICAS ---
+    changeSelectedMonth(delta) {
+        const d = new Date(this.state.selectedDate);
+        d.setMonth(d.getMonth() + delta);
+        this.state.selectedDate = d;
+        this.updateMonthSelectorUI();
+        this.updateStatsViews();
+    },
+
+    resetToCurrentMonth() {
+        this.state.selectedDate = new Date();
+        this.updateMonthSelectorUI();
+        this.updateStatsViews();
+    },
+
+    updateMonthSelectorUI() {
+        const displayEl = document.getElementById("current-month-display");
+        const thisMonthBtn = document.getElementById("btn-this-month");
+        if (!displayEl) return;
+
+        const selDate = this.state.selectedDate;
+        const now = new Date();
+
+        const monthName = selDate.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+        displayEl.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+        const isCurrentMonth = selDate.getMonth() === now.getMonth() && selDate.getFullYear() === now.getFullYear();
+        if (thisMonthBtn) {
+            if (isCurrentMonth) {
+                thisMonthBtn.classList.add("hidden");
+            } else {
+                thisMonthBtn.classList.remove("hidden");
+            }
+        }
+    },
+
+    getSelectedMonthHistory() {
+        const selDate = this.state.selectedDate;
+        const targetMonth = selDate.getMonth();
+        const targetYear = selDate.getFullYear();
+        return this.state.progressHistory.filter(item => {
+            const d = new Date(item.fecha);
+            return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+        });
+    },
+
+    updateStatsViews() {
+        this.calculateMetrics();
+        this.renderHistoryList();
+        this.renderChart();
+        this.renderDistributionChart();
+        this.renderSpiritualLevel();
+        this.renderBadges();
+        this.renderHeatmap();
+    },
+
     async loadStatsSection() {
         const historyContainer = document.getElementById("history-container");
-        historyContainer.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Cargando estadísticas...</p></div>`;
+        if (historyContainer) historyContainer.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Cargando estadísticas...</p></div>`;
 
         const { data, error } = await DB.getSpiritualProgressHistory();
         if (error) {
@@ -645,34 +707,44 @@ const App = {
         }
 
         this.state.progressHistory = data || [];
-        this.calculateMetrics();
-        this.renderHistoryList();
-        this.renderChart();
+        this.updateMonthSelectorUI();
+        this.updateStatsViews();
+    },
+
+    triggerConfetti() {
+        if (typeof confetti === "function") {
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
     },
 
     calculateMetrics() {
         const history = this.state.progressHistory;
+        const monthHistory = this.getSelectedMonthHistory();
         
         const totalMinutes = history.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
-        const totalHours = (totalMinutes / 60).toFixed(1);
-        document.getElementById("metric-total-hours").textContent = totalHours;
+        const totalHours = totalMinutes / 60;
+        const totalHoursEl = document.getElementById("metric-total-hours");
+        if (totalHoursEl) totalHoursEl.textContent = totalHours.toFixed(1);
 
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
+        const monthMinutes = monthHistory.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
+        const monthHours = monthMinutes / 60;
         
-        const monthMinutes = history.reduce((acc, curr) => {
-            const d = new Date(curr.fecha);
-            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-                return acc + Number(curr.minutos_invertidos || 0);
-            }
-            return acc;
-        }, 0);
-        
-        document.getElementById("metric-month-hours").textContent = (monthMinutes / 60).toFixed(1);
+        const monthHoursEl = document.getElementById("metric-month-hours");
+        if (monthHoursEl) monthHoursEl.textContent = monthHours.toFixed(1);
 
         const streak = this.calculateStreak(history);
-        document.getElementById("metric-streak-days").textContent = streak;
+        const streakEl = document.getElementById("metric-streak-days");
+        if (streakEl) streakEl.textContent = streak;
+
+        const bestStreak = this.calculateBestStreak(history);
+        const bestStreakEl = document.getElementById("metric-best-streak");
+        if (bestStreakEl) bestStreakEl.textContent = bestStreak;
+
+        this.renderMonthlyGoal(monthHours);
     },
 
     calculateStreak(history) {
@@ -704,12 +776,284 @@ const App = {
         return streakCount;
     },
 
+    calculateBestStreak(history) {
+        if (!history || history.length === 0) return 0;
+        const sortedDates = Array.from(new Set(history.map(item => {
+            const d = new Date(item.fecha);
+            return d.toISOString().split("T")[0];
+        }))).sort();
+
+        if (sortedDates.length === 0) return 0;
+
+        let maxStreak = 1;
+        let currentStreak = 1;
+
+        for (let i = 1; i < sortedDates.length; i++) {
+            const prev = new Date(sortedDates[i - 1] + "T00:00:00Z");
+            const curr = new Date(sortedDates[i] + "T00:00:00Z");
+            const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+                currentStreak++;
+                if (currentStreak > maxStreak) maxStreak = currentStreak;
+            } else if (diffDays > 1) {
+                currentStreak = 1;
+            }
+        }
+        return maxStreak;
+    },
+
+    renderMonthlyGoal(monthHours) {
+        const goalBar = document.getElementById("goal-progress-bar");
+        const statusText = document.getElementById("goal-status-text");
+        const badgeText = document.getElementById("goal-percentage-badge");
+        const editBtn = document.getElementById("btn-edit-goal");
+
+        if (!goalBar) return;
+
+        const targetGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "15.0");
+        const pct = targetGoal > 0 ? Math.min(100, (monthHours / targetGoal) * 100) : 0;
+
+        goalBar.style.width = `${pct.toFixed(0)}%`;
+        if (statusText) statusText.textContent = `${monthHours.toFixed(1)} / ${targetGoal.toFixed(1)} hrs`;
+        if (badgeText) {
+            badgeText.textContent = `${pct.toFixed(0)}% completado`;
+            if (pct >= 100) {
+                badgeText.style.backgroundColor = "var(--primary-teal)";
+                badgeText.style.color = "#ffffff";
+            }
+        }
+
+        if (editBtn && !editBtn.dataset.hasListener) {
+            editBtn.dataset.hasListener = "true";
+            editBtn.addEventListener("click", () => {
+                const input = prompt("Ingresa tu nueva meta de horas para este mes:", targetGoal.toString());
+                if (input !== null) {
+                    const parsed = parseFloat(input);
+                    if (!isNaN(parsed) && parsed > 0) {
+                        localStorage.setItem("laurita_monthly_goal", parsed.toString());
+                        this.showToast(`🎯 Meta mensual ajustada a ${parsed} horas.`, "success");
+                        this.loadStatsSection();
+                    } else {
+                        this.showToast("Por favor ingresa un número de horas válido.", "error");
+                    }
+                }
+            });
+        }
+    },
+
+    renderSpiritualLevel() {
+        const history = this.state.progressHistory;
+        const totalMinutes = history.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
+        const totalHours = totalMinutes / 60;
+
+        const avatarEl = document.getElementById("level-avatar");
+        const titleEl = document.getElementById("level-title");
+        const subtitleEl = document.getElementById("level-subtitle");
+        const barFillEl = document.getElementById("level-progress-bar");
+        const statusTextEl = document.getElementById("level-status-text");
+        const nextTagEl = document.getElementById("level-next-tag");
+
+        if (!titleEl) return;
+
+        let levelName = "🌱 Semilla de Fe";
+        let avatarIcon = "🌱";
+        let minHours = 0;
+        let maxHours = 15;
+        let nextName = "🌿 Brote Constante";
+
+        if (totalHours >= 50) {
+            levelName = "🍇 Cosecha";
+            avatarIcon = "🍇";
+            minHours = 50;
+            maxHours = 50;
+            nextName = "👑 Nivel Máximo Alcanzado";
+        } else if (totalHours >= 25) {
+            levelName = "🌳 Árbol Frutal";
+            avatarIcon = "🌳";
+            minHours = 25;
+            maxHours = 50;
+            nextName = "🍇 Cosecha";
+        } else if (totalHours >= 15) {
+            levelName = "🌿 Brote Constante";
+            avatarIcon = "🌿";
+            minHours = 15;
+            maxHours = 25;
+            nextName = "🌳 Árbol Frutal";
+        }
+
+        let progressPct = 100;
+        if (maxHours > minHours) {
+            progressPct = Math.min(100, Math.max(0, ((totalHours - minHours) / (maxHours - minHours)) * 100));
+        }
+
+        if (avatarEl) avatarEl.textContent = avatarIcon;
+        titleEl.textContent = levelName;
+        if (subtitleEl) subtitleEl.textContent = `Laurita ha acumulado ${totalHours.toFixed(1)} horas de progreso espiritual.`;
+        if (barFillEl) barFillEl.style.width = `${progressPct.toFixed(0)}%`;
+
+        if (statusTextEl && nextTagEl) {
+            if (totalHours >= 30) {
+                statusTextEl.textContent = "¡Felicidades Laurita! Has alcanzado la plenitud de frutos.";
+                nextTagEl.textContent = nextName;
+            } else {
+                const needed = (maxHours - totalHours).toFixed(1);
+                statusTextEl.textContent = `Faltan ${needed} hrs para el siguiente nivel (${progressPct.toFixed(0)}%)`;
+                nextTagEl.textContent = `Siguiente: ${nextName}`;
+            }
+        }
+    },
+
+    renderBadges() {
+        const gridContainer = document.getElementById("badges-grid");
+        const countBadgeEl = document.getElementById("badges-count-badge");
+        if (!gridContainer) return;
+
+        const history = this.state.progressHistory;
+        const streak = this.calculateStreak(history);
+        const bestStreak = this.calculateBestStreak(history);
+
+        const studyMinutes = history.filter(i => i.tipo_actividad !== 'predicar').reduce((a, b) => a + Number(b.minutos_invertidos || 0), 0);
+        const predicarMinutes = history.filter(i => i.tipo_actividad === 'predicar').reduce((a, b) => a + Number(b.minutos_invertidos || 0), 0);
+        const reunionesCount = history.filter(i => i.tipo_actividad === 'estudiar_reuniones').length;
+
+        const monthlyGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "15.0");
+        const now = new Date();
+        const monthMinutes = history.reduce((acc, curr) => {
+            const d = new Date(curr.fecha);
+            if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+                return acc + Number(curr.minutos_invertidos || 0);
+            }
+            return acc;
+        }, 0);
+        const monthHours = monthMinutes / 60;
+
+        const badges = [
+            {
+                id: "badge-streak",
+                icon: "🔥",
+                name: "Racha de Fuego",
+                desc: "7 días consecutivos registrando estudio",
+                unlocked: streak >= 7 || bestStreak >= 7,
+                current: Math.max(streak, bestStreak),
+                target: 7,
+                unit: "días"
+            },
+            {
+                id: "badge-personal",
+                icon: "📖",
+                name: "Lectora Ferviente",
+                desc: "10+ hrs de lectura y estudio",
+                unlocked: (studyMinutes / 60) >= 10,
+                current: (studyMinutes / 60),
+                target: 10,
+                unit: "hrs"
+            },
+            {
+                id: "badge-preaching",
+                icon: "🚪",
+                name: "Evangelizadora",
+                desc: "40+ hrs de predicación registradas",
+                unlocked: (predicarMinutes / 60) >= 40,
+                current: (predicarMinutes / 60),
+                target: 40,
+                unit: "hrs"
+            },
+            {
+                id: "badge-reunions",
+                icon: "🏛️",
+                name: "Fiel en Reuniones",
+                desc: "7 o más preparaciones de reuniones",
+                unlocked: reunionesCount >= 7,
+                current: reunionesCount,
+                target: 7,
+                unit: "veces"
+            },
+            {
+                id: "badge-goal",
+                icon: "💎",
+                name: "Pionera de Corazón",
+                desc: "Cumplir el 100% de la meta del mes",
+                unlocked: monthHours >= monthlyGoal && monthlyGoal > 0,
+                current: monthHours,
+                target: monthlyGoal,
+                unit: "hrs"
+            }
+        ];
+
+        const unlockedCount = badges.filter(b => b.unlocked).length;
+        if (countBadgeEl) {
+            countBadgeEl.textContent = `${unlockedCount} / ${badges.length} Desbloqueados`;
+        }
+
+        let html = "";
+        badges.forEach(b => {
+            const statusClass = b.unlocked ? "badge-unlocked" : "badge-locked";
+            const lockEmoji = b.unlocked ? "✨" : "🔒";
+            const pct = b.target > 0 ? Math.min(100, (b.current / b.target) * 100) : 0;
+            const currentFormatted = b.unit === "hrs" ? b.current.toFixed(1) : Math.floor(b.current);
+            const targetFormatted = b.unit === "hrs" ? b.target.toFixed(1) : b.target;
+
+            html += `
+                <div class="badge-item ${statusClass}" title="${b.name}: ${b.desc}">
+                    <span class="badge-icon">${b.icon}</span>
+                    <span class="badge-name">${b.name} ${lockEmoji}</span>
+                    <span class="badge-desc">${b.desc}</span>
+                    <div class="badge-progress-wrapper">
+                        <div class="badge-bar-bg">
+                            <div class="badge-bar-fill" style="width: ${pct.toFixed(0)}%;"></div>
+                        </div>
+                        <span class="badge-progress-text">${currentFormatted} / ${targetFormatted} ${b.unit}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        gridContainer.innerHTML = html;
+    },
+
+    renderHeatmap() {
+        const gridContainer = document.getElementById("heatmap-grid");
+        if (!gridContainer) return;
+
+        const selDate = this.state.selectedDate;
+        const year = selDate.getFullYear();
+        const month = selDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const monthHistory = this.getSelectedMonthHistory();
+        const dateMap = {};
+        monthHistory.forEach(item => {
+            const dateStr = new Date(item.fecha).toISOString().split("T")[0];
+            dateMap[dateStr] = (dateMap[dateStr] || 0) + Number(item.minutos_invertidos || 0);
+        });
+
+        const days = [];
+        for (let day = 1; day <= daysInMonth; day++) {
+            const d = new Date(year, month, day);
+            const dStr = d.toISOString().split("T")[0];
+            const minutes = dateMap[dStr] || 0;
+
+            let levelClass = "lvl-0";
+            if (minutes >= 60) levelClass = "lvl-3";
+            else if (minutes >= 30) levelClass = "lvl-2";
+            else if (minutes > 0) levelClass = "lvl-1";
+
+            const formattedDate = d.toLocaleDateString("es-ES", { day: 'numeric', month: 'short' });
+            const titleMsg = minutes > 0 ? `${formattedDate}: ${minutes} min estudiados` : `${formattedDate}: Sin registros`;
+
+            days.push(`<div class="heatmap-day ${levelClass}" title="${titleMsg}"></div>`);
+        }
+
+        gridContainer.innerHTML = days.join("");
+    },
+
     renderHistoryList() {
         const container = document.getElementById("history-container");
-        const history = this.state.progressHistory;
+        const history = this.getSelectedMonthHistory();
 
         if (history.length === 0) {
-            container.innerHTML = `<p class="empty-state">Aún no se ha registrado ninguna actividad espiritual.</p>`;
+            container.innerHTML = `<p class="empty-state">No hay registros de progreso para este mes seleccionado.</p>`;
             return;
         }
 
@@ -756,7 +1100,7 @@ const App = {
             this.state.chartInstance.destroy();
         }
 
-        const history = this.state.progressHistory;
+        const monthHistory = this.getSelectedMonthHistory();
         const categories = {
             predicar: 0,
             estudiar_reuniones: 0,
@@ -765,7 +1109,7 @@ const App = {
             estudio_tiempo_libre: 0
         };
 
-        history.forEach(item => {
+        monthHistory.forEach(item => {
             if (categories[item.tipo_actividad] !== undefined) {
                 categories[item.tipo_actividad] += Number(item.minutos_invertidos || 0);
             }
@@ -787,7 +1131,7 @@ const App = {
             data: {
                 labels: ['Predicar', 'Reuniones', 'Pers. Profundo', 'En Grupo', 'Tiempo Libre'],
                 datasets: [{
-                    label: 'Horas acumuladas',
+                    label: 'Horas del mes',
                     data: dataHours,
                     backgroundColor: [
                         '#14b8a6',
@@ -813,6 +1157,71 @@ const App = {
                         beginAtZero: true,
                         ticks: { color: textColor },
                         title: { display: true, text: 'Horas', color: textColor }
+                    }
+                }
+            }
+        });
+    },
+
+    renderDistributionChart() {
+        const ctx = document.getElementById("distributionChart");
+        if (!ctx) return;
+
+        if (this.state.distributionChartInstance) {
+            this.state.distributionChartInstance.destroy();
+        }
+
+        const monthHistory = this.getSelectedMonthHistory();
+        const categories = {
+            predicar: 0,
+            estudiar_reuniones: 0,
+            estudio_personal: 0,
+            estudio_grupo: 0,
+            estudio_tiempo_libre: 0
+        };
+
+        monthHistory.forEach(item => {
+            if (categories[item.tipo_actividad] !== undefined) {
+                categories[item.tipo_actividad] += Number(item.minutos_invertidos || 0);
+            }
+        });
+
+        const dataHours = [
+            (categories.predicar / 60).toFixed(1),
+            (categories.estudiar_reuniones / 60).toFixed(1),
+            (categories.estudio_personal / 60).toFixed(1),
+            (categories.estudio_grupo / 60).toFixed(1),
+            (categories.estudio_tiempo_libre / 60).toFixed(1)
+        ];
+
+        const isDark = this.state.theme === "dark";
+        const textColor = isDark ? "#cbd5e1" : "#64748b";
+        const hasData = dataHours.some(v => parseFloat(v) > 0);
+
+        this.state.distributionChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Predicar', 'Reuniones', 'Pers. Profundo', 'En Grupo', 'Tiempo Libre'],
+                datasets: [{
+                    data: hasData ? dataHours : [1, 1, 1, 1, 1],
+                    backgroundColor: [
+                        '#14b8a6',
+                        '#a78bfa',
+                        '#60a5fa',
+                        '#fbbf24',
+                        '#10b981'
+                    ],
+                    borderWidth: 2,
+                    borderColor: isDark ? '#1e293b' : '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: textColor, font: { size: 11 } }
                     }
                 }
             }
@@ -853,6 +1262,7 @@ const App = {
         }
 
         this.showToast("¡Registro de tiempo guardado con éxito! 🌟", "success");
+        this.triggerConfetti();
         document.getElementById("form-log-progress").reset();
         document.getElementById("preaching-suboption-container")?.classList.add("hidden");
         this.setInitialDates();

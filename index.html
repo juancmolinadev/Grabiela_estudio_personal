@@ -19,6 +19,9 @@
     
     <!-- Chart.js para visualización de progreso -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Canvas Confetti para celebraciones -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
@@ -271,6 +274,17 @@
                 <h2>📊 Mi progreso espiritual</h2>
             </div>
 
+            <!-- SELECTOR DE MES NAVEGABLE -->
+            <div class="month-selector-card">
+                <button id="btn-prev-month" class="btn-month-nav" title="Mes Anterior">◀</button>
+                <div class="month-display-group">
+                    <span class="month-icon">📅</span>
+                    <span id="current-month-display" class="month-title">Cargando mes...</span>
+                    <button id="btn-this-month" class="btn-this-month-chip hidden">Hoy / Mes Actual</button>
+                </div>
+                <button id="btn-next-month" class="btn-month-nav" title="Mes Siguiente">▶</button>
+            </div>
+
             <!-- Resumen de Métricas Clave -->
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -284,7 +298,14 @@
                     <span class="metric-icon">🔥</span>
                     <div class="metric-data">
                         <span id="metric-streak-days" class="metric-value">0</span>
-                        <span class="metric-label">Días de Racha</span>
+                        <span class="metric-label">Racha Actual</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-icon">🏆</span>
+                    <div class="metric-data">
+                        <span id="metric-best-streak" class="metric-value">0</span>
+                        <span class="metric-label">Mejor Récord</span>
                     </div>
                 </div>
                 <div class="metric-card">
@@ -296,11 +317,95 @@
                 </div>
             </div>
 
-            <!-- Contenedor del Gráfico -->
-            <div class="chart-card">
-                <h3>Horas invertidas por Tipo de Actividad</h3>
-                <div class="chart-wrapper">
-                    <canvas id="progressChart"></canvas>
+            <!-- TARJETA DE NIVEL DE CRECIMIENTO ESPIRITUAL -->
+            <div id="spiritual-level-card" class="level-card">
+                <div class="level-header">
+                    <span id="level-avatar" class="level-avatar">🌱</span>
+                    <div class="level-info">
+                        <span class="level-badge-tag">Nivel Espiritual</span>
+                        <h3 id="level-title" class="level-title">Cargando nivel...</h3>
+                        <p id="level-subtitle" class="level-subtitle">Sigue dedicando tiempo para hacer crecer tu fe</p>
+                    </div>
+                </div>
+                <div class="level-progress-wrapper">
+                    <div class="level-bar-bg">
+                        <div id="level-progress-bar" class="level-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="level-footer">
+                        <span id="level-status-text">0 / 5 hrs para el siguiente nivel</span>
+                        <span id="level-next-tag">Siguiente: 🌿 Brote Constante</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TARJETA DE META MENSUAL DE HORAS -->
+            <div id="monthly-goal-card" class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-title-group">
+                        <span class="goal-icon">🎯</span>
+                        <div>
+                            <h3>Meta Mensual</h3>
+                            <p id="goal-subtitle" class="goal-subtitle">Meta objetivo de este mes</p>
+                        </div>
+                    </div>
+                    <button id="btn-edit-goal" class="btn-goal-edit" title="Cambiar meta mensual de horas">✏️ Ajustar Meta</button>
+                </div>
+                <div class="goal-progress-wrapper">
+                    <div class="goal-bar-bg">
+                        <div id="goal-progress-bar" class="goal-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="goal-footer">
+                        <span id="goal-status-text" class="goal-status-text">0.0 / 15.0 hrs</span>
+                        <span id="goal-percentage-badge" class="goal-percentage-badge">0% completado</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TARJETA DE INSIGNIAS Y LOGROS ESPIRITUALES -->
+            <div class="badges-card">
+                <div class="badges-header">
+                    <h3>🏅 Logros e Insignias Espirituales</h3>
+                    <span id="badges-count-badge" class="badges-count-badge">0 / 5 Desbloqueados</span>
+                </div>
+                <div id="badges-grid" class="badges-grid">
+                    <!-- Generado dinámicamente con JS -->
+                </div>
+            </div>
+
+            <!-- TARJETA MAPA DE CALOR DE CONSISTENCIA (ÚLTIMOS 30 DÍAS) -->
+            <div class="heatmap-card">
+                <div class="heatmap-header">
+                    <div>
+                        <h3>🗓️ Mapa de Consistencia Espiritual</h3>
+                        <p class="heatmap-subtitle">Hábitos de los últimos 30 días</p>
+                    </div>
+                    <div class="heatmap-legend">
+                        <span class="legend-label">Menos</span>
+                        <span class="legend-square lvl-0"></span>
+                        <span class="legend-square lvl-1"></span>
+                        <span class="legend-square lvl-2"></span>
+                        <span class="legend-square lvl-3"></span>
+                        <span class="legend-label">Más</span>
+                    </div>
+                </div>
+                <div id="heatmap-grid" class="heatmap-grid">
+                    <!-- Generado dinámicamente con JS -->
+                </div>
+            </div>
+
+            <!-- CONTENEDOR DE GRÁFICOS (BARRAS Y ROSQUILLA) -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📊 Horas por Tipo de Actividad</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>🍩 Distribución de Tiempo (%)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
                 </div>
             </div>
 
