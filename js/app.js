@@ -256,7 +256,7 @@ const App = {
         }
     },
 
-    // --- SECCIÓN: TEXTO DIARIO DEL DÍA EN HOME (MINIMIZADO POR DEFECTO) ---
+    // --- SECCIÓN: TEXTO DIARIO DEL DÍA EN HOME ---
     async loadDailyTextHome() {
         const container = document.getElementById("daily-text-container");
         if (!container) return;
@@ -335,11 +335,19 @@ const App = {
     },
 
     async handleMarkDailyTextRead(todayStr) {
+        const readKey = `laurita_read_dt_${todayStr}`;
+        
+        // Bloqueo estricto contra ejecución duplicada
+        if (localStorage.getItem(readKey) === "true") return;
+
         const btn = document.getElementById("btn-read-daily-text");
         if (btn) {
             btn.disabled = true;
             btn.textContent = "Guardando...";
         }
+
+        // Marcar la clave inmediatamente en el navegador para evitar doble toque accidental
+        localStorage.setItem(readKey, "true");
 
         const progressData = {
             tipo_actividad: "estudio_personal",
@@ -349,6 +357,7 @@ const App = {
 
         const { data, error } = await DB.createSpiritualProgress(progressData);
         if (error) {
+            localStorage.removeItem(readKey);
             this.showToast("Error al registrar los 5 minutos.", "error");
             if (btn) {
                 btn.disabled = false;
@@ -357,12 +366,9 @@ const App = {
             return;
         }
 
-        localStorage.setItem(`laurita_read_dt_${todayStr}`, "true");
         this.showToast("¡Excelente Laurita! 📖 Se han sumado 5 minutos a tu progreso espiritual.", "success");
         
-        // Mantener el texto abierto mostrando el nuevo estado completado
         const collapsible = document.getElementById("dt-collapsible-content");
-        const expandBtn = document.getElementById("btn-dt-expand");
         const wasOpen = collapsible && !collapsible.classList.contains("hidden");
 
         await this.loadDailyTextHome();
