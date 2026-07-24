@@ -91,6 +91,7 @@ body {
     flex-direction: column;
     min-height: 100vh;
     transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
 }
 
 /* --- HEADER Y NAVEGACIÓN --- */
@@ -447,6 +448,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    min-width: 0;
 }
 
 .dt-badge {
@@ -458,18 +460,23 @@ body {
     border-radius: var(--radius-full);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    flex-shrink: 0;
 }
 
 .dt-verse {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--primary-teal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dt-header-right {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-shrink: 0;
 }
 
 .dt-date {
@@ -490,6 +497,7 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: var(--transition);
+    flex-shrink: 0;
 }
 
 .btn-dt-expand:hover {
@@ -851,15 +859,18 @@ body {
     align-items: center;
     gap: 0.75rem;
     box-shadow: var(--shadow-sm);
+    min-width: 0;
 }
 
 .metric-icon {
     font-size: 1.75rem;
+    flex-shrink: 0;
 }
 
 .metric-data {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .metric-value {
@@ -873,6 +884,9 @@ body {
     font-size: 0.75rem;
     color: var(--text-secondary);
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .chart-card, .history-card {
@@ -930,6 +944,8 @@ body {
     border-radius: var(--radius-md);
     padding: 1.5rem;
     box-shadow: var(--shadow-sm);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .form-card.margin-bottom {
@@ -949,12 +965,16 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    width: 100%;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    width: 100%;
+    min-width: 0; /* EVITA DESBORDAMIENTO EN CSS GRID */
+    box-sizing: border-box;
 }
 
 .form-group.hidden {
@@ -965,6 +985,8 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 label {
@@ -980,6 +1002,8 @@ input[type="date"],
 textarea,
 select {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 0.65rem 0.85rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
@@ -989,6 +1013,14 @@ select {
     color: var(--text-primary);
     transition: var(--transition);
     outline: none;
+    min-width: 0;
+}
+
+/* Ajuste especial para inputs de fecha en móviles */
+input[type="date"] {
+    min-height: 42px;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -1007,6 +1039,7 @@ input:focus, textarea:focus, select:focus {
     text-align: center;
     width: 100%;
     margin-top: 0.5rem;
+    box-sizing: border-box;
 }
 
 .btn-primary {
@@ -1087,6 +1120,7 @@ input:focus, textarea:focus, select:focus {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    max-width: 90vw;
 }
 
 .toast {
@@ -1129,6 +1163,44 @@ input:focus, textarea:focus, select:focus {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* --- MEDIA QUERIES RESPONSIVAS PARA MÓVILES --- */
+@media (max-width: 520px) {
+    .main-content {
+        padding: 0.85rem;
+    }
+
+    .form-card {
+        padding: 1.1rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-container {
+        padding: 0.6rem 0.85rem;
+    }
+
+    .brand-title {
+        font-size: 1rem;
+    }
+
+    .nav-link {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    input[type="date"] {
+        padding: 0.6rem;
+        font-size: 0.85rem;
+    }
 }
 
 /* --- FOOTER INTERACTIVO --- */
