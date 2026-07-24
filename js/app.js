@@ -813,7 +813,7 @@ const App = {
 
         if (!goalBar) return;
 
-        const targetGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "15.0");
+        const targetGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "60.0");
         const pct = targetGoal > 0 ? Math.min(100, (monthHours / targetGoal) * 100) : 0;
 
         goalBar.style.width = `${pct.toFixed(0)}%`;
