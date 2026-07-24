@@ -722,14 +722,19 @@ const App = {
     },
 
     calculateMetrics() {
+        const history = this.state.progressHistory;
         const monthHistory = this.getSelectedMonthHistory();
         
+        // Horas Totales Globales (Acumulado histórico total)
+        const totalMinutes = history.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
+        const totalHours = totalMinutes / 60;
+        const totalHoursEl = document.getElementById("metric-total-hours");
+        if (totalHoursEl) totalHoursEl.textContent = totalHours.toFixed(1);
+
+        // Horas del Mes Seleccionado
         const monthMinutes = monthHistory.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
         const monthHours = monthMinutes / 60;
         
-        const totalHoursEl = document.getElementById("metric-total-hours");
-        if (totalHoursEl) totalHoursEl.textContent = monthHours.toFixed(1);
-
         const monthHoursEl = document.getElementById("metric-month-hours");
         if (monthHoursEl) monthHoursEl.textContent = monthHours.toFixed(1);
 
