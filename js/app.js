@@ -865,26 +865,26 @@ const App = {
         let levelName = "🌱 Semilla de Fe";
         let avatarIcon = "🌱";
         let minHours = 0;
-        let maxHours = 5;
+        let maxHours = 15;
         let nextName = "🌿 Brote Constante";
 
-        if (monthHours >= 30) {
-            levelName = "🍇 Cosecha Copiosa";
+        if (monthHours >= 50) {
+            levelName = "🍇 Cosecha";
             avatarIcon = "🍇";
-            minHours = 30;
-            maxHours = 30;
+            minHours = 50;
+            maxHours = 50;
             nextName = "👑 Nivel Máximo Alcanzado";
-        } else if (monthHours >= 15) {
+        } else if (monthHours >= 25) {
             levelName = "🌳 Árbol Frutal";
             avatarIcon = "🌳";
-            minHours = 15;
-            maxHours = 30;
-            nextName = "🍇 Cosecha Copiosa";
-        } else if (monthHours >= 5) {
+            minHours = 25;
+            maxHours = 50;
+            nextName = "🍇 Cosecha";
+        } else if (monthHours >= 15) {
             levelName = "🌿 Brote Constante";
             avatarIcon = "🌿";
-            minHours = 5;
-            maxHours = 15;
+            minHours = 15;
+            maxHours = 25;
             nextName = "🌳 Árbol Frutal";
         }
 
@@ -923,7 +923,7 @@ const App = {
         const predicarMinutes = history.filter(i => i.tipo_actividad === 'predicar').reduce((a, b) => a + Number(b.minutos_invertidos || 0), 0);
         const reunionesCount = history.filter(i => i.tipo_actividad === 'estudiar_reuniones').length;
 
-        const monthlyGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "15.0");
+        const monthlyGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "60.0");
         const now = new Date();
         const monthMinutes = history.reduce((acc, curr) => {
             const d = new Date(curr.fecha);
