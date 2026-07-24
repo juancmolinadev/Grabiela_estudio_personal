@@ -62,7 +62,6 @@ const App = {
         }
     },
 
-    // Comprueba si se está ejecutando en modo demo o con Supabase real
     checkSupabaseConfig() {
         const isConfigured = !CONFIG.SUPABASE_URL.includes("TU_PROYECTO");
         const banner = document.getElementById("supabase-demo-banner");
@@ -117,7 +116,6 @@ const App = {
         });
     },
 
-    // --- TRIGGER SECRETO: 7 TOQUES EN EL FOOTER ---
     setupDeveloperSecretTrigger() {
         const footerBtn = document.getElementById("app-footer-btn");
         if (!footerBtn) return;
@@ -194,7 +192,6 @@ const App = {
 
     // --- EVENT LISTENERS GENERALES Y FORMULARIOS ---
     setupEventListeners() {
-        // 1. Filtros de tiempo en Sección 1
         const timeChips = document.querySelectorAll("#time-filter-group .chip");
         timeChips.forEach(chip => {
             chip.addEventListener("click", (e) => {
@@ -207,7 +204,6 @@ const App = {
             });
         });
 
-        // 2. Filtros de Actividades cotidianas
         const activityChips = document.querySelectorAll("#activity-filter-group .chip");
         activityChips.forEach(chip => {
             chip.addEventListener("click", (e) => {
@@ -221,7 +217,6 @@ const App = {
             });
         });
 
-        // 3. Pestañas en Sección 4
         const tabBtns = document.querySelectorAll(".tab-btn");
         tabBtns.forEach(btn => {
             btn.addEventListener("click", (e) => {
@@ -234,7 +229,6 @@ const App = {
             });
         });
 
-        // 4. Subopciones de Predicación en Formulario de Registro
         const activitySelect = document.getElementById("log-activity-type");
         const preachingSubContainer = document.getElementById("preaching-suboption-container");
         activitySelect?.addEventListener("change", (e) => {
@@ -247,7 +241,6 @@ const App = {
             }
         });
 
-        // 5. Formularios
         document.getElementById("form-add-item")?.addEventListener("submit", (e) => this.handleAddSingleItem(e));
         document.getElementById("form-add-book")?.addEventListener("submit", (e) => this.handleAddBook(e));
         document.getElementById("form-add-chapter")?.addEventListener("submit", (e) => this.handleAddChapter(e));
@@ -263,7 +256,7 @@ const App = {
         }
     },
 
-    // --- SECCIÓN: TEXTO DIARIO DEL DÍA EN HOME ---
+    // --- SECCIÓN: TEXTO DIARIO DEL DÍA EN HOME (MINIMIZADO POR DEFECTO) ---
     async loadDailyTextHome() {
         const container = document.getElementById("daily-text-container");
         if (!container) return;
@@ -280,8 +273,8 @@ const App = {
                     </div>
                     <span class="dt-date">${this.formatNiceDate(todayStr)}</span>
                 </div>
-                <div class="dt-body">
-                    No hay un texto diario registrado para el día de hoy. Puedes agregar uno desde el menú de Administrador.
+                <div class="dt-body" style="margin-top:0.75rem;">
+                    No hay un texto diario registrado para hoy. Puedes agregar uno desde el menú de Administrador.
                 </div>
             `;
             return;
@@ -292,25 +285,52 @@ const App = {
         const isRead = localStorage.getItem(readKey) === "true";
 
         container.innerHTML = `
-            <div class="dt-header">
+            <div class="dt-header" id="dt-toggle-header" title="Toca para abrir o cerrar el texto diario">
                 <div class="dt-title-group">
                     <span class="dt-badge">Texto Diario</span>
                     <span class="dt-verse">${this.escapeHtml(data.versiculo)}</span>
                 </div>
-                <span class="dt-date">${this.formatNiceDate(todayStr)}</span>
+                <div class="dt-header-right">
+                    <span class="dt-date">${this.formatNiceDate(todayStr)}</span>
+                    <button id="btn-dt-expand" class="btn-dt-expand" aria-label="Abrir texto diario">➕</button>
+                </div>
             </div>
-            <div class="dt-body">
-                "${this.escapeHtml(data.texto_relacionado)}"
-            </div>
-            <div class="dt-footer">
-                <button id="btn-read-daily-text" class="btn-read-dt ${isRead ? 'completed' : ''}" ${isRead ? 'disabled' : ''}>
-                    ${isRead ? '✓ Leído hoy ✨ (+5 min)' : '✓ Ya se leyó (+5 min)'}
-                </button>
+            <div id="dt-collapsible-content" class="dt-content-collapsible hidden">
+                <div class="dt-body">
+                    "${this.escapeHtml(data.texto_relacionado)}"
+                </div>
+                <div class="dt-footer">
+                    <button id="btn-read-daily-text" class="btn-read-dt ${isRead ? 'completed' : ''}" ${isRead ? 'disabled' : ''}>
+                        ${isRead ? '✓ Leído hoy ✨ (+5 min)' : '✓ Ya se leyó (+5 min)'}
+                    </button>
+                </div>
             </div>
         `;
 
+        const toggleHeader = document.getElementById("dt-toggle-header");
+        const expandBtn = document.getElementById("btn-dt-expand");
+        const collapsible = document.getElementById("dt-collapsible-content");
+
+        const toggleExpand = (e) => {
+            if (e.target.closest("#btn-read-daily-text")) return;
+
+            const isHidden = collapsible.classList.contains("hidden");
+            if (isHidden) {
+                collapsible.classList.remove("hidden");
+                expandBtn.textContent = "➖";
+            } else {
+                collapsible.classList.add("hidden");
+                expandBtn.textContent = "➕";
+            }
+        };
+
+        toggleHeader?.addEventListener("click", toggleExpand);
+
         if (!isRead) {
-            document.getElementById("btn-read-daily-text")?.addEventListener("click", () => this.handleMarkDailyTextRead(todayStr));
+            document.getElementById("btn-read-daily-text")?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                this.handleMarkDailyTextRead(todayStr);
+            });
         }
     },
 
@@ -339,7 +359,19 @@ const App = {
 
         localStorage.setItem(`laurita_read_dt_${todayStr}`, "true");
         this.showToast("¡Excelente Laurita! 📖 Se han sumado 5 minutos a tu progreso espiritual.", "success");
-        this.loadDailyTextHome();
+        
+        // Mantener el texto abierto mostrando el nuevo estado completado
+        const collapsible = document.getElementById("dt-collapsible-content");
+        const expandBtn = document.getElementById("btn-dt-expand");
+        const wasOpen = collapsible && !collapsible.classList.contains("hidden");
+
+        await this.loadDailyTextHome();
+
+        if (wasOpen) {
+            document.getElementById("dt-collapsible-content")?.classList.remove("hidden");
+            const newBtn = document.getElementById("btn-dt-expand");
+            if (newBtn) newBtn.textContent = "➖";
+        }
     },
 
     // --- MÓDULO ADMIN DE TEXTOS DIARIOS ---
