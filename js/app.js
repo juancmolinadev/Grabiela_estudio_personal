@@ -722,25 +722,22 @@ const App = {
     },
 
     calculateMetrics() {
-        const history = this.state.progressHistory;
         const monthHistory = this.getSelectedMonthHistory();
         
-        const totalMinutes = history.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
-        const totalHours = totalMinutes / 60;
-        const totalHoursEl = document.getElementById("metric-total-hours");
-        if (totalHoursEl) totalHoursEl.textContent = totalHours.toFixed(1);
-
         const monthMinutes = monthHistory.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
         const monthHours = monthMinutes / 60;
         
+        const totalHoursEl = document.getElementById("metric-total-hours");
+        if (totalHoursEl) totalHoursEl.textContent = monthHours.toFixed(1);
+
         const monthHoursEl = document.getElementById("metric-month-hours");
         if (monthHoursEl) monthHoursEl.textContent = monthHours.toFixed(1);
 
-        const streak = this.calculateStreak(history);
+        const streak = this.calculateStreak(monthHistory);
         const streakEl = document.getElementById("metric-streak-days");
         if (streakEl) streakEl.textContent = streak;
 
-        const bestStreak = this.calculateBestStreak(history);
+        const bestStreak = this.calculateBestStreak(monthHistory);
         const bestStreakEl = document.getElementById("metric-best-streak");
         if (bestStreakEl) bestStreakEl.textContent = bestStreak;
 
@@ -843,9 +840,13 @@ const App = {
     },
 
     renderSpiritualLevel() {
-        const history = this.state.progressHistory;
-        const totalMinutes = history.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
-        const totalHours = totalMinutes / 60;
+        const monthHistory = this.getSelectedMonthHistory();
+        const monthMinutes = monthHistory.reduce((acc, curr) => acc + Number(curr.minutos_invertidos || 0), 0);
+        const monthHours = monthMinutes / 60;
+
+        const selDate = this.state.selectedDate;
+        const monthName = selDate.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+        const monthFormatted = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
         const avatarEl = document.getElementById("level-avatar");
         const titleEl = document.getElementById("level-title");
@@ -859,45 +860,45 @@ const App = {
         let levelName = "🌱 Semilla de Fe";
         let avatarIcon = "🌱";
         let minHours = 0;
-        let maxHours = 15;
+        let maxHours = 5;
         let nextName = "🌿 Brote Constante";
 
-        if (totalHours >= 50) {
-            levelName = "🍇 Cosecha";
+        if (monthHours >= 30) {
+            levelName = "🍇 Cosecha Copiosa";
             avatarIcon = "🍇";
-            minHours = 50;
-            maxHours = 50;
+            minHours = 30;
+            maxHours = 30;
             nextName = "👑 Nivel Máximo Alcanzado";
-        } else if (totalHours >= 25) {
+        } else if (monthHours >= 15) {
             levelName = "🌳 Árbol Frutal";
             avatarIcon = "🌳";
-            minHours = 25;
-            maxHours = 50;
-            nextName = "🍇 Cosecha";
-        } else if (totalHours >= 15) {
+            minHours = 15;
+            maxHours = 30;
+            nextName = "🍇 Cosecha Copiosa";
+        } else if (monthHours >= 5) {
             levelName = "🌿 Brote Constante";
             avatarIcon = "🌿";
-            minHours = 15;
-            maxHours = 25;
+            minHours = 5;
+            maxHours = 15;
             nextName = "🌳 Árbol Frutal";
         }
 
         let progressPct = 100;
         if (maxHours > minHours) {
-            progressPct = Math.min(100, Math.max(0, ((totalHours - minHours) / (maxHours - minHours)) * 100));
+            progressPct = Math.min(100, Math.max(0, ((monthHours - minHours) / (maxHours - minHours)) * 100));
         }
 
         if (avatarEl) avatarEl.textContent = avatarIcon;
         titleEl.textContent = levelName;
-        if (subtitleEl) subtitleEl.textContent = `Laurita ha acumulado ${totalHours.toFixed(1)} horas de progreso espiritual.`;
+        if (subtitleEl) subtitleEl.textContent = `Laurita acumuló ${monthHours.toFixed(1)} horas de estudio en ${monthFormatted}.`;
         if (barFillEl) barFillEl.style.width = `${progressPct.toFixed(0)}%`;
 
         if (statusTextEl && nextTagEl) {
-            if (totalHours >= 30) {
-                statusTextEl.textContent = "¡Felicidades Laurita! Has alcanzado la plenitud de frutos.";
+            if (monthHours >= 30) {
+                statusTextEl.textContent = "¡Felicidades Laurita! Alcanzaste la plenitud de frutos en este mes.";
                 nextTagEl.textContent = nextName;
             } else {
-                const needed = (maxHours - totalHours).toFixed(1);
+                const needed = (maxHours - monthHours).toFixed(1);
                 statusTextEl.textContent = `Faltan ${needed} hrs para el siguiente nivel (${progressPct.toFixed(0)}%)`;
                 nextTagEl.textContent = `Siguiente: ${nextName}`;
             }
