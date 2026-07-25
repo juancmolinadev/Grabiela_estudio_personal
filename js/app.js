@@ -958,7 +958,7 @@ const App = {
             {
                 id: "badge-preaching",
                 icon: "🚪",
-                name: "Evangelizadora",
+                name: "Sierva de Jehová",
                 desc: "40+ hrs de predicación registradas",
                 unlocked: (predicarMinutes / 60) >= 40,
                 current: (predicarMinutes / 60),
