@@ -317,7 +317,7 @@ const App = {
                 </div>
                 <div class="dt-footer">
                     <button id="btn-read-daily-text" class="btn-read-dt ${isRead ? 'completed' : ''}" ${isRead ? 'disabled' : ''}>
-                        ${isRead ? '✓ Leído hoy ✨ (+5 min)' : '✓ Ya se leyó (+5 min)'}
+                        ${isRead ? '✓ Leído hoy ✨ (+5 min)' : '✓ Leido (+5 min)'}
                     </button>
                 </div>
             </div>
@@ -377,7 +377,7 @@ const App = {
             this.showToast("Error al registrar los 5 minutos.", "error");
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = "✓ Ya se leyó (+5 min)";
+                btn.textContent = "✓ Leido (+5 min)";
             }
             return;
         }
