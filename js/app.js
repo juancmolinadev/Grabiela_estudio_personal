@@ -978,7 +978,7 @@ const App = {
             {
                 id: "badge-goal",
                 icon: "💎",
-                name: "Pionera de Corazón",
+                name: "Muchacha Juiciosa",
                 desc: "Cumplir el 100% de la meta del mes",
                 unlocked: monthHours >= monthlyGoal && monthlyGoal > 0,
                 current: monthHours,
