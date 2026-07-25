@@ -825,6 +825,14 @@ body {
     font-weight: 600;
 }
 
+.book-badge {
+    background-color: var(--accent-purple-light);
+    color: var(--accent-purple);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
+
 .item-link {
     color: var(--accent-blue);
     text-decoration: none;

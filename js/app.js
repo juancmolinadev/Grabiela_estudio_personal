@@ -510,6 +510,14 @@ const App = {
         document.getElementById("diagnostic-modal")?.classList.add("hidden");
     },
 
+    async loadBooks() {
+        const { data, error } = await DB.getBooks();
+        if (!error && data) {
+            this.state.books = data;
+        }
+        return this.state.books || [];
+    },
+
     // --- SECCIÓN 1: PENDIENTES Y TIEMPO LIBRE ---
     async loadPendingSection() {
         const container = document.getElementById("pending-items-container");
@@ -519,6 +527,8 @@ const App = {
                 <p>Cargando opciones disponibles...</p>
             </div>
         `;
+
+        await this.loadBooks();
 
         const { data, error } = await DB.getPendingStudyItems();
         if (error) {
@@ -585,6 +595,14 @@ const App = {
                 const linkAttr = item.enlace ? `<a href="${item.enlace}" target="_blank" rel="noopener" class="item-link">🔗 Abrir</a>` : "";
                 const timeText = item.tiempo_estimado ? `${item.tiempo_estimado} min` : "Breve";
 
+                let bookBadge = "";
+                if (item.categoria === "capitulo" && item.libro_padre_id) {
+                    const parentBook = (this.state.books || []).find(b => b.id === item.libro_padre_id);
+                    if (parentBook) {
+                        bookBadge = `<span class="book-badge">📘 ${this.escapeHtml(parentBook.titulo)}</span>`;
+                    }
+                }
+
                 html += `
                     <div class="study-item-card" id="card-item-${item.id}">
                         <div class="item-left">
@@ -592,6 +610,7 @@ const App = {
                             <div class="item-info">
                                 <span class="item-title">${this.escapeHtml(item.titulo)}</span>
                                 <div class="item-meta">
+                                    ${bookBadge}
                                     <span class="time-badge">⏱️ ${timeText}</span>
                                     ${linkAttr}
                                 </div>
@@ -1387,14 +1406,14 @@ const App = {
         const select = document.getElementById("chapter-parent-book");
         if (!select) return;
 
-        const { data, error } = await DB.getBooks();
-        if (error || !data || data.length === 0) {
+        const books = await this.loadBooks();
+        if (!books || books.length === 0) {
             select.innerHTML = `<option value="" disabled selected>No hay libros creados aún</option>`;
             return;
         }
 
         let html = `<option value="" disabled selected>Selecciona un libro</option>`;
-        data.forEach(book => {
+        books.forEach(book => {
             html += `<option value="${book.id}">${this.escapeHtml(book.titulo)}</option>`;
         });
 
@@ -1405,6 +1424,8 @@ const App = {
     async loadCompletedSection() {
         const container = document.getElementById("completed-items-container");
         container.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Cargando ítems finalizados...</p></div>`;
+
+        await this.loadBooks();
 
         const { data, error } = await DB.getFinishedStudyItems();
         if (error) {
@@ -1458,6 +1479,14 @@ const App = {
                     ? new Date(item.fecha_finalizado).toLocaleDateString("es-ES", { day: 'numeric', month: 'short' })
                     : "Completado";
 
+                let bookBadge = "";
+                if (item.categoria === "capitulo" && item.libro_padre_id) {
+                    const parentBook = (this.state.books || []).find(b => b.id === item.libro_padre_id);
+                    if (parentBook) {
+                        bookBadge = `<span class="book-badge">📘 ${this.escapeHtml(parentBook.titulo)}</span>`;
+                    }
+                }
+
                 html += `
                     <div class="study-item-card">
                         <div class="item-left">
@@ -1465,6 +1494,7 @@ const App = {
                             <div class="item-info">
                                 <span class="item-title">${this.escapeHtml(item.titulo)}</span>
                                 <div class="item-meta">
+                                    ${bookBadge}
                                     <span>Leído el ${dateFinished}</span>
                                 </div>
                             </div>
