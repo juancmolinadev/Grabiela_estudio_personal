@@ -10,6 +10,7 @@ const DB = {
     STORAGE_ITEMS_KEY: "laurita_study_items",
     STORAGE_PROGRESS_KEY: "laurita_spiritual_progress",
     STORAGE_DAILY_TEXTS_KEY: "laurita_daily_texts",
+    STORAGE_SETTINGS_KEY: "laurita_app_settings",
 
     // Datos iniciales de prueba para LocalStorage si está vacío
     getInitialMockItems() {
@@ -559,6 +560,63 @@ const DB = {
         } catch (err) {
             console.error("Error al obtener historial de progreso:", err);
             return { data: null, error: err };
+        }
+    },
+
+    // --- MANEJO DE CONFIGURACIONES (SUPABASE / LOCALSTORAGE) ---
+    async getSetting(clave, defaultValue = "") {
+        const client = initSupabase();
+        if (client) {
+            try {
+                const { data, error } = await client
+                    .from("app_settings")
+                    .select("valor")
+                    .eq("clave", clave)
+                    .maybeSingle();
+
+                if (!error && data && data.valor !== undefined && data.valor !== null) {
+                    localStorage.setItem(`laurita_setting_${clave}`, data.valor);
+                    localStorage.setItem(`laurita_${clave}`, data.valor);
+                    return data.valor;
+                }
+            } catch (err) {
+                console.warn(`No se pudo obtener la configuración '${clave}' de Supabase, usando respaldo local:`, err);
+            }
+        }
+
+        const localVal = localStorage.getItem(`laurita_setting_${clave}`) || localStorage.getItem(`laurita_${clave}`);
+        if (localVal !== null && localVal !== undefined) {
+            return localVal;
+        }
+
+        return defaultValue;
+    },
+
+    async setSetting(clave, valor) {
+        const valStr = String(valor);
+        localStorage.setItem(`laurita_setting_${clave}`, valStr);
+        localStorage.setItem(`laurita_${clave}`, valStr);
+
+        const client = initSupabase();
+        if (!client) {
+            return { success: true, error: null };
+        }
+
+        try {
+            const { error } = await client
+                .from("app_settings")
+                .upsert([
+                    { clave: clave, valor: valStr, fecha_actualizacion: new Date().toISOString() }
+                ], { onConflict: "clave" });
+
+            if (error) {
+                console.error(`Error al guardar configuración '${clave}' en Supabase:`, error);
+                return { success: false, error };
+            }
+            return { success: true, error: null };
+        } catch (err) {
+            console.error(`Error al guardar configuración '${clave}' en Supabase:`, err);
+            return { success: false, error: err };
         }
     }
 };

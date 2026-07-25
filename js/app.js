@@ -25,7 +25,8 @@ const App = {
         footerClicks: 0,
         footerTimer: null,
         theme: "dark",
-        selectedDate: new Date()
+        selectedDate: new Date(),
+        monthlyGoal: 60.0
     },
 
     // --- INICIALIZACIÓN ---
@@ -38,6 +39,14 @@ const App = {
         this.setInitialDates();
         this.loadBooksDropdown();
         this.loadDailyTextHome();
+        this.loadMonthlyGoal();
+    },
+
+    async loadMonthlyGoal() {
+        const val = await DB.getSetting("monthly_goal", "60.0");
+        const parsed = parseFloat(val);
+        this.state.monthlyGoal = (!isNaN(parsed) && parsed > 0) ? parsed : 60.0;
+        return this.state.monthlyGoal;
     },
 
     // --- MANEJO DE TEMA (DARK MODE POR DEFECTO) ---
@@ -699,6 +708,8 @@ const App = {
         const historyContainer = document.getElementById("history-container");
         if (historyContainer) historyContainer.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Cargando estadísticas...</p></div>`;
 
+        await this.loadMonthlyGoal();
+
         const { data, error } = await DB.getSpiritualProgressHistory();
         if (error) {
             const formatted = DB.formatError(error);
@@ -813,7 +824,7 @@ const App = {
 
         if (!goalBar) return;
 
-        const targetGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "60.0");
+        const targetGoal = this.state.monthlyGoal || 60.0;
         const pct = targetGoal > 0 ? Math.min(100, (monthHours / targetGoal) * 100) : 0;
 
         goalBar.style.width = `${pct.toFixed(0)}%`;
@@ -828,12 +839,14 @@ const App = {
 
         if (editBtn && !editBtn.dataset.hasListener) {
             editBtn.dataset.hasListener = "true";
-            editBtn.addEventListener("click", () => {
-                const input = prompt("Ingresa tu nueva meta de horas para este mes:", targetGoal.toString());
+            editBtn.addEventListener("click", async () => {
+                const currentGoal = this.state.monthlyGoal || 60.0;
+                const input = prompt("Ingresa tu nueva meta de horas para este mes:", currentGoal.toString());
                 if (input !== null) {
                     const parsed = parseFloat(input);
                     if (!isNaN(parsed) && parsed > 0) {
-                        localStorage.setItem("laurita_monthly_goal", parsed.toString());
+                        this.state.monthlyGoal = parsed;
+                        await DB.setSetting("monthly_goal", parsed.toString());
                         this.showToast(`🎯 Meta mensual ajustada a ${parsed} horas.`, "success");
                         this.loadStatsSection();
                     } else {
@@ -923,7 +936,7 @@ const App = {
         const predicarMinutes = history.filter(i => i.tipo_actividad === 'predicar').reduce((a, b) => a + Number(b.minutos_invertidos || 0), 0);
         const reunionesCount = history.filter(i => i.tipo_actividad === 'estudiar_reuniones').length;
 
-        const monthlyGoal = parseFloat(localStorage.getItem("laurita_monthly_goal") || "45.0");
+        const monthlyGoal = this.state.monthlyGoal || 60.0;
         const now = new Date();
         const monthMinutes = history.reduce((acc, curr) => {
             const d = new Date(curr.fecha);
