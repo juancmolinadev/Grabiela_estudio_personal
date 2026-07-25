@@ -30,7 +30,7 @@ const App = {
     },
 
     // --- INICIALIZACIÓN ---
-    init() {
+    async init() {
         this.initTheme();
         this.checkSupabaseConfig();
         this.setupNavigation();
@@ -39,7 +39,7 @@ const App = {
         this.setInitialDates();
         this.loadBooksDropdown();
         this.loadDailyTextHome();
-        this.loadMonthlyGoal();
+        await this.loadMonthlyGoal();
     },
 
     async loadMonthlyGoal() {

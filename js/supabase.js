@@ -563,7 +563,7 @@ const DB = {
         }
     },
 
-    // --- MANEJO DE CONFIGURACIONES (SUPABASE / LOCALSTORAGE) ---
+    // --- MANEJO DE CONFIGURACIONES (100% BASE DE DATOS SUPABASE) ---
     async getSetting(clave, defaultValue = "") {
         const client = initSupabase();
         if (client) {
@@ -575,48 +575,47 @@ const DB = {
                     .maybeSingle();
 
                 if (!error && data && data.valor !== undefined && data.valor !== null) {
-                    localStorage.setItem(`laurita_setting_${clave}`, data.valor);
-                    localStorage.setItem(`laurita_${clave}`, data.valor);
                     return data.valor;
                 }
+
+                // Si no existe la clave aún en la BD, se inserta la meta por defecto
+                if (!error && !data) {
+                    await client.from("app_settings").insert([{ clave, valor: String(defaultValue) }]);
+                    return String(defaultValue);
+                }
             } catch (err) {
-                console.warn(`No se pudo obtener la configuración '${clave}' de Supabase, usando respaldo local:`, err);
+                console.error(`Error al obtener '${clave}' de Supabase:`, err);
             }
         }
 
-        const localVal = localStorage.getItem(`laurita_setting_${clave}`) || localStorage.getItem(`laurita_${clave}`);
-        if (localVal !== null && localVal !== undefined) {
-            return localVal;
-        }
-
-        return defaultValue;
+        // Respaldo únicamente si Supabase no está configurado (modo offline / local)
+        const localVal = localStorage.getItem(`laurita_${clave}`);
+        return (localVal !== null && localVal !== undefined) ? localVal : String(defaultValue);
     },
 
     async setSetting(clave, valor) {
         const valStr = String(valor);
-        localStorage.setItem(`laurita_setting_${clave}`, valStr);
-        localStorage.setItem(`laurita_${clave}`, valStr);
-
         const client = initSupabase();
-        if (!client) {
-            return { success: true, error: null };
-        }
+        if (client) {
+            try {
+                const { error } = await client
+                    .from("app_settings")
+                    .upsert([
+                        { clave: clave, valor: valStr, fecha_actualizacion: new Date().toISOString() }
+                    ], { onConflict: "clave" });
 
-        try {
-            const { error } = await client
-                .from("app_settings")
-                .upsert([
-                    { clave: clave, valor: valStr, fecha_actualizacion: new Date().toISOString() }
-                ], { onConflict: "clave" });
-
-            if (error) {
-                console.error(`Error al guardar configuración '${clave}' en Supabase:`, error);
-                return { success: false, error };
+                if (error) {
+                    console.error(`Error al guardar configuración '${clave}' en Supabase:`, error);
+                    return { success: false, error };
+                }
+                return { success: true, error: null };
+            } catch (err) {
+                console.error(`Error al guardar configuración '${clave}' en Supabase:`, err);
+                return { success: false, error: err };
             }
-            return { success: true, error: null };
-        } catch (err) {
-            console.error(`Error al guardar configuración '${clave}' en Supabase:`, err);
-            return { success: false, error: err };
         }
+
+        localStorage.setItem(`laurita_${clave}`, valStr);
+        return { success: true, error: null };
     }
 };
