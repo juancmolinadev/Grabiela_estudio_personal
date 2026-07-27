@@ -99,10 +99,18 @@ const DB = {
     },
 
     getInitialMockDailyTexts() {
-        const todayStr = new Date().toISOString().split("T")[0];
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = tomorrow.toISOString().split("T")[0];
+        const tYear = tomorrow.getFullYear();
+        const tMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const tDay = String(tomorrow.getDate()).padStart(2, '0');
+        const tomorrowStr = `${tYear}-${tMonth}-${tDay}`;
 
         return [
             {

@@ -49,6 +49,35 @@ const App = {
         return this.state.monthlyGoal;
     },
 
+    getLocalDateString(d = new Date()) {
+        if (!d) return "";
+        if (typeof d === "string") {
+            const cleanStr = d.split("T")[0];
+            const parts = cleanStr.split("-");
+            if (parts.length === 3 && parts[0].length === 4 && !d.includes("T")) {
+                const y = Number(parts[0]);
+                const m = Number(parts[1]);
+                const day = Number(parts[2]);
+                if (!isNaN(y) && !isNaN(m) && !isNaN(day)) {
+                    return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                }
+            }
+        }
+
+        const dateObj = typeof d === "string" || typeof d === "number" ? new Date(d) : d;
+        if (!dateObj || isNaN(dateObj.getTime())) return "";
+
+        try {
+            const formatter = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Bogota" });
+            return formatter.format(dateObj);
+        } catch (e) {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    },
+
     // --- MANEJO DE TEMA (DARK MODE POR DEFECTO) ---
     initTheme() {
         const savedTheme = localStorage.getItem("laurita_theme") || "dark";
@@ -169,7 +198,7 @@ const App = {
     openDailyTextAdminModal() {
         document.getElementById("daily-text-admin-modal")?.classList.remove("hidden");
         const dateInput = document.getElementById("admin-dt-date");
-        if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
+        if (dateInput) dateInput.value = this.getLocalDateString();
         this.loadAdminDailyTexts();
     },
 
@@ -267,8 +296,7 @@ const App = {
     setInitialDates() {
         const dateInput = document.getElementById("log-date");
         if (dateInput) {
-            const today = new Date().toISOString().split("T")[0];
-            dateInput.value = today;
+            dateInput.value = this.getLocalDateString();
         }
     },
 
@@ -277,7 +305,7 @@ const App = {
         const container = document.getElementById("daily-text-container");
         if (!container) return;
 
-        const todayStr = new Date().toISOString().split("T")[0];
+        const todayStr = this.getLocalDateString();
         const { data, error } = await DB.getDailyTextByDate(todayStr);
 
         if (!data) {
@@ -454,7 +482,7 @@ const App = {
 
         this.showToast("¡Texto diario guardado con éxito!", "success");
         document.getElementById("form-admin-daily-text").reset();
-        document.getElementById("admin-dt-date").value = new Date().toISOString().split("T")[0];
+        document.getElementById("admin-dt-date").value = this.getLocalDateString();
         this.loadAdminDailyTexts();
     },
 
@@ -782,11 +810,11 @@ const App = {
     calculateStreak(history) {
         if (!history || history.length === 0) return 0;
 
-        const datesSet = new Set(history.map(item => new Date(item.fecha).toISOString().split("T")[0]));
-        const todayStr = new Date().toISOString().split("T")[0];
+        const datesSet = new Set(history.map(item => this.getLocalDateString(item.fecha)));
+        const todayStr = this.getLocalDateString();
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
+        const yesterdayStr = this.getLocalDateString(yesterday);
 
         if (!datesSet.has(todayStr) && !datesSet.has(yesterdayStr)) {
             return 0;
@@ -796,7 +824,7 @@ const App = {
         let checkDate = datesSet.has(todayStr) ? new Date() : yesterday;
 
         while (true) {
-            const checkStr = checkDate.toISOString().split("T")[0];
+            const checkStr = this.getLocalDateString(checkDate);
             if (datesSet.has(checkStr)) {
                 streakCount++;
                 checkDate.setDate(checkDate.getDate() - 1);
@@ -810,10 +838,7 @@ const App = {
 
     calculateBestStreak(history) {
         if (!history || history.length === 0) return 0;
-        const sortedDates = Array.from(new Set(history.map(item => {
-            const d = new Date(item.fecha);
-            return d.toISOString().split("T")[0];
-        }))).sort();
+        const sortedDates = Array.from(new Set(history.map(item => this.getLocalDateString(item.fecha)))).filter(Boolean).sort();
 
         if (sortedDates.length === 0) return 0;
 
@@ -821,8 +846,10 @@ const App = {
         let currentStreak = 1;
 
         for (let i = 1; i < sortedDates.length; i++) {
-            const prev = new Date(sortedDates[i - 1] + "T00:00:00Z");
-            const curr = new Date(sortedDates[i] + "T00:00:00Z");
+            const prevParts = sortedDates[i - 1].split("-").map(Number);
+            const currParts = sortedDates[i].split("-").map(Number);
+            const prev = new Date(prevParts[0], prevParts[1] - 1, prevParts[2]);
+            const curr = new Date(currParts[0], currParts[1] - 1, currParts[2]);
             const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1) {
@@ -1062,14 +1089,14 @@ const App = {
         const monthHistory = this.getSelectedMonthHistory();
         const dateMap = {};
         monthHistory.forEach(item => {
-            const dateStr = new Date(item.fecha).toISOString().split("T")[0];
+            const dateStr = this.getLocalDateString(item.fecha);
             dateMap[dateStr] = (dateMap[dateStr] || 0) + Number(item.minutos_invertidos || 0);
         });
 
         const days = [];
         for (let day = 1; day <= daysInMonth; day++) {
             const d = new Date(year, month, day);
-            const dStr = d.toISOString().split("T")[0];
+            const dStr = this.getLocalDateString(d);
             const minutes = dateMap[dStr] || 0;
 
             let levelClass = "lvl-0";
@@ -1279,7 +1306,10 @@ const App = {
             return;
         }
 
-        const dateObj = new Date(dateVal + "T12:00:00Z");
+        const dateParts = dateVal ? dateVal.split("-").map(Number) : [];
+        const dateObj = dateParts.length === 3 
+            ? new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0)
+            : new Date();
 
         const progressData = {
             tipo_actividad: activityType,
@@ -1515,8 +1545,9 @@ const App = {
     // --- UTILIDADES ---
     formatNiceDate(dateStr) {
         if (!dateStr) return "";
-        const parts = dateStr.split("-");
-        if (parts.length === 3) {
+        const cleanStr = this.getLocalDateString(dateStr) || dateStr;
+        const parts = cleanStr.split("-").map(Number);
+        if (parts.length === 3 && !parts.some(isNaN)) {
             const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
             return dateObj.toLocaleDateString("es-ES", { weekday: 'short', day: 'numeric', month: 'short' });
         }
