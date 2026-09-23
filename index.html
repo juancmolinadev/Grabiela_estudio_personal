@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Error</title>
+    <title>Movie Web App</title>
+    
+    <!-- Todo el diseño está asegurado aquí adentro -->
     <style>
-        /* Paleta de colores y variables */
         :root {
-            --text-main: #ffffff;
-            --text-muted: #a1a1a6;
-            --banner-bg: rgba(28, 28, 30, 0.65); /* Gris oscuro translúcido */
+            --banner-bg: rgba(28, 28, 30, 0.65);
             --banner-border: rgba(255, 255, 255, 0.15);
             --icon-color: #ff453a;
         }
 
-        /* Fondo simulando la web para que el desenfoque del banner sea visible */
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
             background: radial-gradient(circle at 15% 50%, #2a0845, #6441a5, #1e1366);
             background-attachment: fixed;
-            color: var(--text-main);
+            color: #ffffff;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -34,189 +32,58 @@
             margin-bottom: 10px;
             text-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        
+
         .page-content p {
             color: #d1d1d6;
             font-size: 1.2rem;
         }
 
-        /* Estilos del Banner tipo Apple (Estático) */
+        /* Diseño del banner estático */
         .apple-banner {
             position: fixed;
             top: 24px;
             left: 50%;
-            transform: translateX(-50%); 
+            transform: translateX(-50%);
             width: 90%;
             max-width: 420px;
             background-color: var(--banner-bg);
-            
-            /* Efecto de cristal (Glassmorphism) */
             backdrop-filter: saturate(180%) blur(20px);
             -webkit-backdrop-filter: saturate(180%) blur(20px);
-            
             border: 0.5px solid var(--banner-border);
             border-radius: 18px;
             padding: 16px;
             display: flex;
             align-items: flex-start;
-            justify-content: flex-start;
+            gap: 14px;
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
             z-index: 9999;
-        }
-
-        .banner-content {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-        }
-
-        .icon {
-            color: var(--icon-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 2px;
-        }
-
-        .message {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
             text-align: left;
         }
 
-        .title {
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-        }
-
-        .description {
-            font-size: 13px;
-            font-weight: 400;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
-
-        /* Responsividad para móviles */
-        @media (max-width: 480px) {
-            .apple-banner {
-                width: calc(100% - 32px);
-                top: 16px;
-                padding: 14px;
-                border-radius: 16px;
-            }
-            .title { font-size: 14px; }
-            .description { font-size: 12px; }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Banner de Error Estático -->
-    <div class="apple-banner" role="alert">
-        <div class="banner-content">
-            <div class="icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-            </div>
-            <div class="message">
-                <span class="title">Database Error</span>
-                <span class="description">Database error due to lack of use, contact support :(</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Contenido de fondo de prueba -->
-    <div class="page-content">
-        <h1>Movie Web App</h1>
-        <p>El banner superior ahora es fijo y siempre visible.</p>
-    </div>
-
-</body>
-</html>
-            transform: translateX(-50%) translateY(-150%); /* Posición inicial fuera de pantalla */
-            width: 90%;
-            max-width: 420px;
-            background-color: var(--banner-bg);
-            
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            
-            border: 0.5px solid var(--banner-border);
-            border-radius: 18px;
-            padding: 16px;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-            z-index: 9999;
-            
-            /* Animación de entrada automática (0.15s de retraso) */
-            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
-        }
-
-        /* Cuando el checkbox está marcado, animar la salida del banner */
-        .close-toggle:checked ~ .apple-banner {
-            animation: slideOut 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .banner-content {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-        }
-
-        .icon {
+        .apple-banner .icon {
             color: var(--icon-color);
             display: flex;
             align-items: center;
-            justify-content: center;
             margin-top: 2px;
         }
 
-        .message {
+        .apple-banner .message {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        .title {
+        .apple-banner .title {
             font-size: 15px;
             font-weight: 600;
-            letter-spacing: -0.01em;
         }
 
-        .description {
+        .apple-banner .description {
             font-size: 13px;
-            font-weight: 400;
-            color: var(--text-muted);
+            color: #a1a1a6;
             line-height: 1.4;
         }
 
-        .close-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 6px;
-            margin-left: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-
-        .close-btn:hover {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: var(--text-main);
-        }
-
-        /* Mobile Responsiveness */
         @media (max-width: 480px) {
             .apple-banner {
                 width: calc(100% - 32px);
@@ -224,50 +91,30 @@
                 padding: 14px;
                 border-radius: 16px;
             }
-            
-            .title {
-                font-size: 14px;
-            }
-            
-            .description {
-                font-size: 12px;
-            }
-            
-            .icon svg {
-                width: 20px;
-                height: 20px;
-            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Checkbox oculto que controla el estado del banner -->
-    <input type="checkbox" id="close-banner-toggle" class="close-toggle" aria-hidden="true">
-
-    <!-- Error Banner -->
+    <!-- El banner de error flotante -->
     <div class="apple-banner" role="alert">
-        <div class="banner-content">
-            <div class="icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-            </div>
-            <div class="message">
-                <span class="title">Database Error</span>
-                <span class="description">Database error due to lack of use, contact support :(</span>
-            </div>
-        </div>
-        
-        <!-- Al hacer clic en este label, se marca el checkbox de arriba -->
-        <label for="close-banner-toggle" class="close-btn" aria-label="Close">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+        <div class="icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-        </label>
+        </div>
+        <div class="message">
+            <span class="title">Database Error</span>
+            <span class="description">Database error due to lack of use, contact support :(</span>
+        </div>
+    </div>
+
+    <!-- El contenido de la página -->
+    <div class="page-content">
+        <h1>Movie Web App</h1>
+        <p>El código está limpio y el banner funciona correctamente.</p>
     </div>
 
 </body>
