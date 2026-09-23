@@ -4,7 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Error</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Color Palette and System Reset */
+        :root {
+            --bg-color: #000000;
+            --text-main: #ffffff;
+            --text-muted: #a1a1a6;
+            --banner-bg: rgba(28, 28, 30, 0.65);
+            --banner-border: rgba(255, 255, 255, 0.1);
+            --icon-color: #ff453a;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Ocultar el checkbox de control */
+        .close-toggle {
+            display: none;
+        }
+
+        /* Animaciones CSS puras */
+        @keyframes slideIn {
+            0% {
+                transform: translateX(-50%) translateY(-150%);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            0% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-50%) translateY(-150%);
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        /* Apple-style Banner */
+        .apple-banner {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-150%); /* Posición inicial fuera de pantalla */
+            width: 90%;
+            max-width: 420px;
+            background-color: var(--banner-bg);
+            
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            
+            border: 0.5px solid var(--banner-border);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            
+            /* Animación de entrada automática (0.15s de retraso) */
+            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+        }
+
+        /* Cuando el checkbox está marcado, animar la salida del banner */
+        .close-toggle:checked ~ .apple-banner {
+            animation: slideOut 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .banner-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .icon {
+            color: var(--icon-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .title {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .description {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 480px) {
+            .apple-banner {
+                width: calc(100% - 32px);
+                top: 16px;
+                padding: 14px;
+                border-radius: 16px;
+            }
+            
+            .title {
+                font-size: 14px;
+            }
+            
+            .description {
+                font-size: 12px;
+            }
+            
+            .icon svg {
+                width: 20px;
+                height: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
 
